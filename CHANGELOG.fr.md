@@ -2,6 +2,8 @@
 
 ## 2026-10-18
 
+- Corrige les panneaux invisibles : chaque encart occupe toute la grille du tracker. Régression couverte dans Chromium et Firefox, sur ordinateur et mobile.
+
 - Panneaux latéraux, drapeaux FR/EN, stockage en Gio et noms de launchers lisibles.
 - Aperçu HTTP avant capture, télécommande et saisie/collage Unicode via scrcpy.
 - IP publiques IPv4/IPv6 et résolveurs DNS observés : tests IPleak exécutés sur la Shield.

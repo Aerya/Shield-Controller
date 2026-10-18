@@ -333,6 +333,7 @@ body.list #device_list_menu {
 
 /* Tracker name header */
 #devices .tracker-name {
+    grid-column: 1 / -1;
     padding: 0 0 8px 0;
     font-size: 18px;
     font-weight: 600;
@@ -449,6 +450,7 @@ a.link-stream .kind-icon {
 }
 
 #devices .device-list .device-workspace {
+    grid-column: 1 / -1;
     display: grid;
     grid-template-columns: minmax(300px, 370px) minmax(0, 1fr);
     gap: 16px;

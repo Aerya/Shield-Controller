@@ -47,7 +47,8 @@
     "test:e2e": "playwright test",
     "test:e2e:docker": "playwright test --config playwright.docker.config.ts",
     "test:e2e:device": "QA_DEVICE=1 QA_EXTERNAL_STACK=1 playwright test --config playwright.docker.config.ts",
-    "test:e2e:types": "tsc -p tests/e2e --noEmit"
+    "test:e2e:types": "tsc -p tests/e2e --noEmit",
+    "test:layout": "playwright test --config playwright.layout.config.ts"
   },
   "dependencies": {
     "@sigstore/bundle": "^5.0.0",
