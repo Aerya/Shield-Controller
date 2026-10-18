@@ -172,3 +172,17 @@ describe('promise-answering children settle when closed without an answer', () =
         await expect(answer).resolves.toBe('cancel');
     });
 });
+
+it('uses global language and theme controls for an embedded device panel', () => {
+    const workspace = document.createElement('div');
+    workspace.className = 'device-workspace';
+    workspace.innerHTML = '<button>Open</button><section class="device-detail-panel"></section>';
+    document.body.append(workspace);
+    const panel = Modal.inDevicePanel(workspace.querySelector('button')!, () => new Plain());
+    const host = workspace.querySelector('.device-detail-panel')!;
+    expect(host.querySelector('dialog[open]')).not.toBeNull();
+    expect(host.querySelector('.language-toggle')).toBeNull();
+    expect(host.querySelector('.theme-toggle')).toBeNull();
+    expect(host.querySelector('.modal-close')).not.toBeNull();
+    panel!.close();
+});

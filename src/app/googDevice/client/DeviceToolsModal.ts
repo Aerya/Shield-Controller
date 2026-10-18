@@ -9,6 +9,14 @@ interface DnsState {
     hostname: string;
     privateDnsValidated: boolean;
 }
+interface InternetResult {
+    provider: string;
+    testedAt: string;
+    results: { family: string; address: string | null; error: string | null }[];
+    resolverDetails: { address: string; provider: string | null; source: string }[];
+}
+// Reopening a panel shares its in-flight test instead of starting competing ADB probes.
+const internetTests = new Map<string, Promise<InternetResult>>();
 export class DeviceToolsModal extends Modal {
     declare private status: HTMLElement;
     private disposed = false;
@@ -163,28 +171,47 @@ export class DeviceToolsModal extends Modal {
             'External test (IPleak.net): queries originate on the Shield and reveal its public IPv4/IPv6 and the recursive DNS resolvers observed for this test. This does not list root servers or every upstream setting. Apps and VPNs may use different routes.';
         const internetResult = document.createElement('pre');
         internetResult.style.whiteSpace = 'pre-wrap';
-        const internet = this.button('Detect public IP and DNS resolvers', async () => {
-            this.status.textContent = 'Testing from Shield… This can take up to 40 seconds.';
-            const data = await (await this.request('internet', {})).json();
-            if (this.disposed) return;
-            internetResult.textContent =
-                `${data.provider} · ${data.testedAt}\n` +
-                data.results
-                    .map(
-                        (row: { family: string; address: string | null; error: string | null }) =>
-                            `${row.family}: ${row.address || row.error}`,
-                    )
-                    .join('\n') +
-                '\nDNS:\n' +
-                (data.resolverDetails
-                    .map(
-                        (row: { address: string; provider: string | null; source: string }) =>
-                            `${row.address} — ${row.provider || t('Unknown provider')}${row.source === 'network-owner' ? ` · ${t('Network operator')}` : ''}`,
-                    )
-                    .join('\n') || '—');
-            this.status.textContent = 'Network test completed on the Shield.';
-        });
-        this.bodyEl.append(internetNote, internet, internetResult);
+        const internetStatus = document.createElement('p');
+        internetStatus.setAttribute('role', 'status');
+        const detectInternet = async (): Promise<void> => {
+            internetStatus.textContent = 'Testing from Shield… This can take up to 40 seconds.';
+            try {
+                let pending = internetTests.get(this.serial);
+                if (!pending) {
+                    pending = this.request('internet', {}).then(
+                        (response) => response.json() as Promise<InternetResult>,
+                    );
+                    internetTests.set(this.serial, pending);
+                }
+                let data: InternetResult;
+                try {
+                    data = await pending;
+                } finally {
+                    if (internetTests.get(this.serial) === pending) internetTests.delete(this.serial);
+                }
+                if (this.disposed) return;
+                internetResult.textContent =
+                    `${data.provider} · ${data.testedAt}\n` +
+                    data.results
+                        .map(
+                            (row: { family: string; address: string | null; error: string | null }) =>
+                                `${row.family}: ${row.address || row.error}`,
+                        )
+                        .join('\n') +
+                    '\nDNS:\n' +
+                    (data.resolverDetails
+                        .map(
+                            (row: { address: string; provider: string | null; source: string }) =>
+                                `${row.address} — ${row.provider || t('Unknown provider')}${row.source === 'network-owner' ? ` · ${t('Network operator')}` : ''}`,
+                        )
+                        .join('\n') || '—');
+                internetStatus.textContent = 'Network test completed on the Shield.';
+            } catch (error) {
+                if (!this.disposed) internetStatus.textContent = error instanceof Error ? error.message : String(error);
+            }
+        };
+        this.bodyEl.append(internetNote, internetStatus, internetResult);
+        void detectInternet();
         this.bodyEl.append(toolbar, stateOutput, note, mode, hostname, apply, testNote, domain, server, test, results);
         try {
             show(await (await this.request('dns')).json());

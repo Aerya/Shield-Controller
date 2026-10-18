@@ -333,20 +333,6 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
         const streamEntry = StreamClientScrcpy.createEntryForDeviceList(device, 'desc-block', fullName, this.params);
         streamEntry && overlaySection.appendChild(streamEntry);
 
-        // No registered player on an insecure origin is not an empty state, it
-        // is an explicable one: WebCodecs is exposed only in a secure context,
-        // so at http://<lan-ip>:8000 — the documented way to reach the Docker
-        // image — the connect cell was simply absent and nothing said why.
-        if (isActive && DeviceTracker.CREATE_DIRECT_LINKS && StreamClientScrcpy.getPlayers().length === 0) {
-            const notice = insecureOriginNotice(window);
-            if (notice) {
-                const noticeEl = document.createElement('div');
-                noticeEl.classList.add('insecure-origin-notice');
-                noticeEl.textContent = notice;
-                overlaySection.appendChild(noticeEl);
-            }
-        }
-
         // Intercept shell links — open modal instead of navigating to new tab
         const shellLink = overlaySection.querySelector('.shell a') as HTMLAnchorElement | null;
         if (shellLink) {
@@ -419,6 +405,20 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
                 });
                 cell.appendChild(button);
                 overlaySection.appendChild(cell);
+            }
+        }
+
+        // No registered player on an insecure origin is not an empty state, it
+        // is an explicable one: WebCodecs is exposed only in a secure context,
+        // so at http://<lan-ip>:8000 — the documented way to reach the Docker
+        // image — the connect cell was simply absent and nothing said why.
+        if (isActive && DeviceTracker.CREATE_DIRECT_LINKS && StreamClientScrcpy.getPlayers().length === 0) {
+            const notice = insecureOriginNotice(window);
+            if (notice) {
+                const noticeEl = document.createElement('div');
+                noticeEl.classList.add('insecure-origin-notice');
+                noticeEl.textContent = notice;
+                row.querySelector('.device')?.appendChild(noticeEl);
             }
         }
 

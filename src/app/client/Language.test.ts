@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from 'vitest';
-import { createLanguageToggle, initLanguage, setLanguage } from './Language';
+import { createLanguageToggle, initLanguage, setLanguage, t } from './Language';
 
 beforeEach(() => {
     document.body.replaceChildren();
@@ -48,4 +48,14 @@ it('remembers the choice and offers an accessible language switch', () => {
     expect(button.querySelector('[data-language=en]')?.getAttribute('aria-pressed')).toBe('true');
     expect(localStorage.getItem('shield-controller-language')).toBe('en');
     window.dispatchEvent(new Event('pagehide'));
+});
+
+it('translates the exact network discovery guidance and restores its English wording', () => {
+    const source =
+        'Click quick scan for modern Android devices on your network, or scan network to probe a full subnet. Make sure wireless debugging is enabled on the devices you wish to connect with.';
+    setLanguage('fr');
+    expect(t(source)).toContain('recherche rapide');
+    expect(t(source)).toContain('débogage réseau');
+    setLanguage('en');
+    expect(t(source)).toBe(source);
 });

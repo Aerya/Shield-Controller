@@ -25,21 +25,6 @@ export class DeviceManagerModal extends Modal {
         super({ title: `Shield Controller — ${label}` });
         this.serial = serial;
         this.frameEl.classList.add('device-manager');
-        const tabs = document.createElement('div');
-        tabs.className = 'manager-toolbar';
-        for (const [name, text] of [
-            ['info', 'Device information'],
-            ['apps', 'Applications'],
-        ] as const) {
-            const button = document.createElement('button');
-            button.textContent = text;
-            button.addEventListener('click', () => {
-                if (this.pending) return;
-                void this.load(name);
-            });
-            tabs.append(button);
-        }
-        this.bodyEl.prepend(tabs);
         void this.load(tab);
     }
 
@@ -149,11 +134,6 @@ export class DeviceManagerModal extends Modal {
             return name ? `${name} — ${component}` : component;
         };
         rows.push(['Android default home', friendlyApp(metrics.launcher)]);
-        if (metrics.projectivyInstalled)
-            rows.push([
-                'Projectivy Launcher',
-                metrics.projectivyAccessibility ? 'Installed; accessibility service enabled' : 'Installed',
-            ]);
         rows.push([
             'Foreground application',
             friendlyApp(metrics.foreground) || 'No focused application reported (screen asleep or Android restriction)',
@@ -197,7 +177,7 @@ export class DeviceManagerModal extends Modal {
         this.content.append(table);
         const launcherNote = document.createElement('p');
         launcherNote.textContent =
-            'Android default home is the system declaration. Projectivy can override the Home button through accessibility without changing it. Foreground application means the app currently receiving input; Android may report none when the screen sleeps.';
+            'Android default home is the system declaration. Foreground application means the app currently receiving input; Android may report none when the screen sleeps.';
         this.content.append(launcherNote);
         for (const [key, title] of [
             ['network', 'Network addresses'],

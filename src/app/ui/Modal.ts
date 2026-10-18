@@ -77,10 +77,12 @@ export abstract class Modal {
         this.headerControls = document.createElement('div');
         this.headerControls.classList.add('modal-header-controls');
 
-        this.headerControls.appendChild(createLanguageToggle(true));
-        const themeBtn = createThemeToggle();
-        themeBtn.classList.add('modal-close'); // reuse close button sizing
-        this.headerControls.appendChild(themeBtn);
+        if (!Modal.panelTarget) {
+            this.headerControls.appendChild(createLanguageToggle(true));
+            const themeBtn = createThemeToggle();
+            themeBtn.classList.add('modal-close'); // reuse close button sizing
+            this.headerControls.appendChild(themeBtn);
+        }
 
         // Forced-choice modals (dismissible: false) render no \u00d7 \u2014 the user
         // must pick an in-body action.

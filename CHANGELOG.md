@@ -2,6 +2,8 @@
 
 ## 2026-10-18
 
+- Automatic public IP/DNS detection on opening, grouped actions, panels without duplicate language/theme controls or tabs, no dedicated Projectivy diagnostics, and translated network discovery guidance.
+
 - Label known DNS services and identify other resolver network operators through RIPEstat (IPv4/IPv6); keep IPs visible if metadata is unavailable.
 
 - Fix invisible device panels by spanning the full tracker grid; Chromium and Firefox desktop/mobile regression coverage.

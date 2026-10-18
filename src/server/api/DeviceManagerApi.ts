@@ -130,8 +130,6 @@ export class DeviceManagerApi {
                         '(dumpsys activity activities; dumpsys window windows; dumpsys activity top) | grep -E "mResumedActivity|topResumedActivity|mCurrentFocus|mFocusedApp|^ACTIVITY" | head -10',
                     launchers:
                         'cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME',
-                    projectivy: 'pm path com.spocky.projengmenu',
-                    accessibility: 'settings get secure enabled_accessibility_services',
                 };
                 const entries = await Promise.all(
                     Object.entries(commands).map(async ([key, command]) => {
@@ -152,8 +150,6 @@ export class DeviceManagerApi {
                         temperatures: temperatures(data['thermal'] ?? ''),
                         disks: diskUsage(data['storage'] ?? ''),
                         launcher: /([a-zA-Z][\w.]+\/[\w.$]+)/.exec(data['launcher'] ?? '')?.[1] ?? null,
-                        projectivyInstalled: (data['projectivy'] ?? '').startsWith('package:'),
-                        projectivyAccessibility: (data['accessibility'] ?? '').includes('com.spocky.projengmenu/'),
                         foreground: /([a-zA-Z][\w.]+\/[\w.$]+)/.exec(data['foreground'] ?? '')?.[1] ?? null,
                     },
                 });

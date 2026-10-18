@@ -138,6 +138,8 @@ describe('device telemetry', () => {
                 uptime: '3600',
                 metrics: {
                     cpuPercent: 12.5,
+                    projectivyInstalled: true,
+                    projectivyAccessibility: true,
                     temperatures: [{ name: 'CPU0', celsius: 35.5 }],
                     launcher: 'com.example.home/.Main',
                     foreground: 'com.example.player/.Main',
@@ -155,6 +157,12 @@ describe('device telemetry', () => {
         expect(text).toContain('com.example.home/.Main');
         expect(text).toContain('com.example.player/.Main');
         expect(text).toContain('1.00 / 2.00 GiB (50%)');
+        expect(document.querySelector('.manager-info')!.textContent).not.toContain('Projectivy');
+        expect(
+            [...document.querySelectorAll('.modal-body button')].some((node) =>
+                ['Device information', 'Applications'].includes(node.textContent!),
+            ),
+        ).toBe(false);
         modal.close();
     });
 });
