@@ -171,17 +171,15 @@ ENV DATA_ROOT=/data \
 VOLUME /data
 EXPOSE 8000
 
-# 8000 internally, always; the host maps it. The probe targets GET /api/config,
-# which src/server/security/instanceToken.ts exempts from the per-instance
-# token — so it answers 200 without a cookie. A probe against `/` would follow
-# the auth gate once module 18 is enabled and start reporting unhealthy on a
-# perfectly healthy server.
+# 8000 internally, always; the host maps it. The loopback-only identity
+# endpoint stays available with sign-in enabled. /api/config returns 401
+# in that mode and would incorrectly mark a healthy container unhealthy.
 #
 # start-period is 180s, not the default 0: FIRST boot hydrates /data by
 # downloading adb (~9 MB) before it listens. A shorter window marks the
 # container unhealthy during a successful first run.
 HEALTHCHECK --interval=15s --timeout=5s --start-period=180s --retries=5 \
-  CMD ["node", "-e", "fetch('http://127.0.0.1:8000/api/config').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+  CMD ["node", "-e", "fetch('http://127.0.0.1:8000/api/whoami').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
 # tini -g, not tini. The -g flag forwards SIGTERM to the whole process GROUP, so
 # it reaches node THROUGH start.sh's bash restart loop. Without it bash defers
