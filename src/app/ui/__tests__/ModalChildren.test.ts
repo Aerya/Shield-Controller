@@ -186,3 +186,11 @@ it('uses global language and theme controls for an embedded device panel', () =>
     expect(host.querySelector('.modal-close')).not.toBeNull();
     panel!.close();
 });
+
+it('uses global language and theme controls for a standalone popup too', () => {
+    const popup = new Plain();
+    expect(document.querySelector('.modal .language-toggle')).toBeNull();
+    expect(document.querySelector('.modal .theme-toggle')).toBeNull();
+    expect(document.querySelector('.modal .modal-close')).not.toBeNull();
+    popup.close();
+});

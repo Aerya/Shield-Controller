@@ -11,7 +11,7 @@ export class ShellCloseConfirmModal extends Modal {
     }
 
     private constructor(resolve: (value: boolean) => void) {
-        super({ title: 'End Shell Session' });
+        super({ title: 'End Shell Session', showCloseButton: false });
         this.resolveFn = resolve;
         this.dialog.classList.add('shell-close-confirm-modal');
         queueMicrotask(() => this.fillBody(this.bodyEl));

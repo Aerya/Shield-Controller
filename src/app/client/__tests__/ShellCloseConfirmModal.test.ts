@@ -36,6 +36,18 @@ function getButton(label: string): HTMLButtonElement {
 }
 
 describe('ShellCloseConfirmModal.confirm', () => {
+    it('only offers Cancel and Close, without duplicated language/theme controls or a header cross', async () => {
+        const promise = ShellCloseConfirmModal.confirm();
+        await Promise.resolve();
+        const dialog = getDialog();
+        expect(dialog.querySelector('.language-toggle')).toBeNull();
+        expect(dialog.querySelector('.theme-toggle')).toBeNull();
+        expect(dialog.querySelector('.modal-header button')).toBeNull();
+        expect(dialog.querySelectorAll('button')).toHaveLength(2);
+        getButton('cancel').click();
+        await expect(promise).resolves.toBe(false);
+    });
+
     it('resolves true when close is clicked', async () => {
         const promise = ShellCloseConfirmModal.confirm();
         await Promise.resolve();

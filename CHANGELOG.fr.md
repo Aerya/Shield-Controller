@@ -2,6 +2,8 @@
 
 ## 2026-10-18
 
+- Retire les commandes langue/thème des popups et la croix redondante de la confirmation de fermeture du terminal ; Annuler, Fermer et Échap restent disponibles.
+
 - Détection IP/DNS automatique à l’ouverture, actions regroupées, panneaux sans commandes FR/EN/thème ni onglets redondants, informations sans diagnostic Projectivy et traduction de la recherche réseau.
 
 - Affiche le fournisseur des résolveurs DNS connus et identifie les autres opérateurs via RIPEstat (IPv4/IPv6), avec conservation des IP si la recherche échoue.

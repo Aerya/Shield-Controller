@@ -1,6 +1,4 @@
-import { createLanguageToggle } from '../client/Language';
 import '../../style/modal.css';
-import { createThemeToggle } from '../client/ThemeToggle';
 
 export interface ModalOptions {
     title: string;
@@ -11,6 +9,8 @@ export interface ModalOptions {
      * dismiss it is an explicit in-body action. Defaults to true.
      */
     dismissible?: boolean;
+    /** Hide the header cross while preserving Escape/backdrop cancellation. */
+    showCloseButton?: boolean;
 }
 
 export abstract class Modal {
@@ -73,20 +73,13 @@ export abstract class Modal {
         title.textContent = options.title;
         header.appendChild(title);
 
-        // Header right-side controls: theme toggle + (optional subclass buttons) + close button
+        // Header actions; language and theme belong to the global page controls.
         this.headerControls = document.createElement('div');
         this.headerControls.classList.add('modal-header-controls');
 
-        if (!Modal.panelTarget) {
-            this.headerControls.appendChild(createLanguageToggle(true));
-            const themeBtn = createThemeToggle();
-            themeBtn.classList.add('modal-close'); // reuse close button sizing
-            this.headerControls.appendChild(themeBtn);
-        }
-
         // Forced-choice modals (dismissible: false) render no \u00d7 \u2014 the user
         // must pick an in-body action.
-        if (this.dismissible) {
+        if (this.dismissible && options.showCloseButton !== false) {
             this.closeBtn = document.createElement('button');
             this.closeBtn.classList.add('modal-close');
             this.closeBtn.textContent = '\u00d7';
@@ -176,7 +169,7 @@ export abstract class Modal {
     protected onBeforeClose(): void {}
 
     /** Insert a button into the header controls at the far left, keeping the
-     *  theme toggle + close X together on the right for consistent UX across modals. */
+     *  close X on the right for consistent UX across modals. */
     protected addHeaderButton(btn: HTMLElement): void {
         this.headerControls.insertBefore(btn, this.headerControls.firstChild);
     }

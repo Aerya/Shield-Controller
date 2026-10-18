@@ -2,6 +2,8 @@
 
 ## 2026-10-18
 
+- Remove language/theme controls from popups and the redundant cross in terminal close confirmation; Cancel, Close and Escape remain available.
+
 - Automatic public IP/DNS detection on opening, grouped actions, panels without duplicate language/theme controls or tabs, no dedicated Projectivy diagnostics, and translated network discovery guidance.
 
 - Label known DNS services and identify other resolver network operators through RIPEstat (IPv4/IPv6); keep IPs visible if metadata is unavailable.
