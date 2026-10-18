@@ -1,5 +1,9 @@
 # Shield Controller
 
+<p align="center">
+  <img src="assets/branding/shield-controller-logo.png" alt="Shield Controller" width="180">
+</p>
+
 Gérez votre **NVIDIA Shield / Android TV** depuis un navigateur. Auto-hébergé avec Docker.
 
 [English](README.md) · [Projet d’origine](https://github.com/bilbospocketses/ws-scrcpy-web)
