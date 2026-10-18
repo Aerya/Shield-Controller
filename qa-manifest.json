@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "subject": "ws-scrcpy-web",
+    "subject": "shield-controller",
     "kind": "container-linux",
     "artifact": {
         "type": "container-image",

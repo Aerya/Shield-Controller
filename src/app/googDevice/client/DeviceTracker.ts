@@ -381,6 +381,24 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
             });
         });
 
+        if (isActive) {
+            const management = document.createElement('div');
+            management.className = 'manager-card-actions';
+            for (const [tab, text] of [
+                ['info', 'device info'],
+                ['apps', 'applications / APK'],
+            ] as const) {
+                const button = document.createElement('button');
+                button.textContent = text;
+                button.addEventListener('click', async () => {
+                    const { DeviceManagerModal } = await import('./DeviceManagerModal');
+                    new DeviceManagerModal(device.udid, device['ro.product.model'] || device.udid, tab);
+                });
+                management.appendChild(button);
+            }
+            overlaySection.appendChild(management);
+        }
+
         tbody.appendChild(row);
 
         // Populate the connect link. The stream itself goes to this server

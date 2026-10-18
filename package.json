@@ -1,17 +1,17 @@
 {
-  "name": "ws-scrcpy-web",
+  "name": "shield-controller",
   "version": "0.5.10",
-  "description": "Browser-based Android screen mirroring and control, powered by scrcpy",
+  "description": "Manage NVIDIA Shield and Android TV devices from your browser",
   "license": "GPL-3.0-only",
-  "author": "bilbospocketses",
+  "author": "Aerya; based on ws-scrcpy-web by bilbospocketses",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bilbospocketses/ws-scrcpy-web.git"
+    "url": "git+https://github.com/Aerya/Shield-Controller.git"
   },
   "bugs": {
-    "url": "https://github.com/bilbospocketses/ws-scrcpy-web/issues"
+    "url": "https://github.com/Aerya/Shield-Controller/issues"
   },
-  "homepage": "https://github.com/bilbospocketses/ws-scrcpy-web#readme",
+  "homepage": "https://github.com/Aerya/Shield-Controller#readme",
   "keywords": [
     "scrcpy",
     "android",

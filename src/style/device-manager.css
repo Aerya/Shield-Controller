@@ -1,0 +1,106 @@
+dialog.modal .modal-frame.device-manager {
+    width: min(960px, 94vw);
+}
+.device-manager .modal-body {
+    max-height: 78vh;
+    overflow-y: auto;
+}
+.manager-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+}
+.manager-toolbar input {
+    flex: 1;
+    min-width: 160px;
+}
+.manager-info {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) 3fr;
+    gap: 8px 18px;
+}
+.manager-info dt {
+    font-weight: bold;
+}
+.manager-info dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.device-manager pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+}
+.device-manager details {
+    margin: 12px 0;
+}
+.manager-apk-drop {
+    border: 2px dashed var(--accent-color, #69baff);
+    padding: 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+.manager-apk-drop.drag-over {
+    background: #4785b233;
+}
+.manager-app {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #8885;
+    padding: 12px 0;
+}
+.manager-app > div {
+    min-width: 0;
+}
+.manager-app strong,
+.manager-app small {
+    display: block;
+    overflow-wrap: anywhere;
+}
+.manager-app small {
+    opacity: 0.75;
+    margin-top: 4px;
+}
+.manager-app button {
+    flex-shrink: 0;
+}
+.manager-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0;
+}
+@media (max-width: 520px) {
+    .manager-info {
+        grid-template-columns: 1fr;
+    }
+    .manager-info dd {
+        margin-bottom: 10px;
+    }
+}
+
+.device-manager button,
+.device-manager select,
+.device-manager input {
+    box-sizing: border-box;
+    max-width: 100%;
+    background: var(--stream-bg-color, #333);
+    color: var(--text-color, #ddd);
+    border: 1px solid var(--button-border-color, #666);
+    border-radius: 5px;
+    padding: 6px 9px;
+}
+.device-manager button {
+    cursor: pointer;
+}
+.device-manager button:hover {
+    border-color: var(--accent-color, #69baff);
+}
+.device-manager .modal-body {
+    box-sizing: border-box;
+    min-height: 0;
+}

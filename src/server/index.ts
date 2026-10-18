@@ -9,6 +9,7 @@ import { CapabilitiesApi } from './api/CapabilitiesApi';
 import { ConfigApi } from './api/ConfigApi';
 import { DependencyApi } from './api/DependencyApi';
 import { DeviceDiscoveryApi } from './api/DeviceDiscoveryApi';
+import { DeviceManagerApi } from './api/DeviceManagerApi';
 import { EmbedRequestApi } from './api/EmbedRequestApi';
 import { PairingApi } from './api/PairingApi';
 import { ServerRestartApi } from './api/ServerRestartApi';
@@ -150,6 +151,8 @@ if (__ssArgs) {
     // route 404s with nothing in the log to explain it.
     const pairingApi = new PairingApi();
     HttpServer.addApiHandler(pairingApi);
+
+    HttpServer.addApiHandler(new DeviceManagerApi());
 
     const discoveryApi = new DeviceDiscoveryApi();
     HttpServer.addApiHandler(discoveryApi);

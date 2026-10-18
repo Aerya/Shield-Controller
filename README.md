@@ -1,495 +1,53 @@
-# ws-scrcpy-web
+# Shield Controller
 
-> ## ⚠️ The Docker image is moving
->
-> **The image is now published as [`bilbospocketses/ws-scrcpy-web`](https://hub.docker.com/r/bilbospocketses/ws-scrcpy-web), and mirrored at `ghcr.io/bilbospocketses/ws-scrcpy-web`.**
->
-> **`jchapz30/ws-scrcpy-web` is deprecated and will be deleted on 2026-12-09.** Until then it receives every release, and both new coordinates already carry the full tag history — the digests are identical, so switching is a one-line change:
->
-> ```
-> docker pull bilbospocketses/ws-scrcpy-web:beta
-> ```
->
-> If you pull `jchapz30/...` on a schedule, update it before **2026-12-09**.
+Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Docker.
 
-<p align="center">
-  <img src="assets/banner.png" alt="ws-scrcpy-web" width="600">
-</p>
-
-ws-scrcpy-web is a self-hosted, browser-based Android screen-mirroring app (independent project at [bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web), descended from [NetrisTV/ws-scrcpy](https://github.com/NetrisTV/ws-scrcpy)) that needs no client install beyond a browser. A local Node.js server uses ADB to push Genymobile's vanilla [scrcpy-server](https://github.com/Genymobile/scrcpy) onto the device and multiplexes its video/audio/control TCP sockets onto a single WebSocket via a 1-byte channel prefix. The browser client is a custom TypeScript protocol layer that demuxes the stream and decodes H.264/H.265/AV1/VP8/VP9 video and Opus/AAC/FLAC/PCM audio entirely through WebCodecs (no WASM fallbacks).
-
-Input flows back as mouse, UHID keyboard, i16-fixed-point scroll, and a D-pad/Touch mode toggle for leanback TV apps, alongside extras like an ADB shell, file manager, mDNS scan, sleep/wake, and device labels. It ships self-contained (bundled Node + ADB, launcher scripts, in-app updater) and exposes a public `WsScrcpy.startStream()` UMD/ESM library plus an `embed.html` shim for embedding live streams into other apps.
-
-## Key Design Decisions
-
-- **Vanilla scrcpy-server** -- uses unmodified Genymobile scrcpy-server binaries. No Java patching, no custom forks. Drop in new versions as they release; the in-app dependency manager checks for and applies updates.
-- **Node.js ADB proxy** -- the server bridges ADB tunnels to WebSocket connections for the browser. The protocol layer is implemented in TypeScript.
-- **WebCodecs only** -- no WASM decoder fallbacks. Modern browsers only.
-- **Pure browser code** -- no Node.js Buffer polyfill or path-browserify in the browser bundle.
-- **Focused feature set** -- screen mirroring, touch/keyboard/UHID control, ADB shell, file management. No iOS support, no Chrome DevTools proxy.
+[Français](README.fr.md) · [Upstream project](https://github.com/bilbospocketses/ws-scrcpy-web)
 
 ## Features
 
-- Real-time screen mirroring in the browser via WebSocket
-- **Multi-codec video** -- H.264, H.265 (HEVC), AV1 with automatic detection and smart encoder selection, plus VP8 and VP9 for devices whose encoder list has none of the three
-- **Multi-codec audio** -- Opus, AAC, FLAC, raw PCM via WebCodecs AudioDecoder
-- **UHID keyboard/mouse** -- hardware-level input via USB HID reports (pointer lock for mouse)
-- **D-pad / Touch input modes** -- toolbar toggle between D-pad mode (default, for TV apps like Peacock/Netflix) and Touch mode (for touch-aware apps). D-pad mode maps left-click to OK, scroll wheel to up/down, Shift+scroll to left/right
-- **Scroll wheel support** -- mouse wheel scrolling on the mirrored device, tuned for latent streams
-- Touch and keyboard input forwarding (classic scrcpy keycode mode)
-- **Configure stream modal** -- native `<dialog>` overlay with codec/encoder selection, device probe, and advanced settings
-- **Redesigned toolbar** -- compact controls with quick stats (FPS, resolution, codec), stream refresh button, and consistent alignment
-- **Quality stats overlay** -- real-time FPS, bitrate, resolution, codec, and encoder info
-- **Stream modal** -- native `<dialog>` overlay for the full mirroring experience (video, toolbar, audio, UHID input). Home page stays visible behind the backdrop — close the stream and you're right back at the device list
-- **Viewport scaling** -- video scales to fill available space with correct aspect ratio
-- **Remote ADB shell** -- native `<dialog>` terminal modal with xterm.js, close confirmation for active sessions, Escape/backdrop blocked (terminal needs both)
-- **File browser** -- native `<dialog>` modal with breadcrumb navigation, sortable columns (sticky header so size/date stay aligned when scrolling), SVG file type icons (6 types), configurable icon sizes, hover action icons sized to match, reserved actions column so columns never shift on hover, selection with bulk operations, drag-and-drop upload, download with progress, delete with confirmation, client-side filter
-- **Programmatic stream API** -- load `ws-scrcpy.umd.js` or `ws-scrcpy.esm.js` and call `WsScrcpy.startStream(container, deviceId, options)` to render a stream into any DOM element. Includes bundled TypeScript types (`ws-scrcpy.d.ts`). Also provides a thin `/embed.html?device=<udid>` wrapper for iframe consumers.
-- **Device labels** -- name your devices for easy identification, persisted per-user across sessions in the app's SQLite store, inline edit from device cards or during network scan
-- **Network device discovery** -- two-channel scan for ADB devices on the local network: mDNS advertisement for modern devices plus TCP port-5555 sweep for older devices that don't advertise. Configuration dialog auto-detects your gateway subnet and accepts additional subnets (CIDR, bare IP, or IP range); subnets persist across sessions. Streaming progress chip with cancel support; scan skips already-connected devices and dedupes mDNS+TCP hits. Manual-add fallback for single-IP cases.
-- **Device disconnect** -- disconnect network devices directly from the device card
-- **Sleep/wake toggle** -- turn devices on or off from the device card; state polled server-side and pushed via WebSocket so buttons stay in sync even when the device sleeps on a timer or via the physical remote
-- **Dark/light theme** -- toggle between dark (default) and light modes; first paint follows your OS preference, then your saved choice applies (persisted per-user in the app's SQLite store)
-- **Responsive layout** -- centered page container scales from mobile to 4K (up to 5 device cards)
-- **In-app dependency updater** -- check and update Node.js, ADB, and scrcpy-server from the home page
-- **System tray icon** -- quick-open browser, a mode-aware tooltip (local vs. service) and a clean exit. Windows: a standalone helper the launcher's supervisor auto-spawns and auto-recovers. Linux: a StatusNotifierItem icon inside the launcher — KDE Plasma and any desktop with a StatusNotifier host; stock GNOME (Fedora Workstation) has no host, so no icon appears there and Settings → Server → **stop the server and close the app** remains the exit path.
-- **Server logging** -- all server output logged to `ws-scrcpy-web.log` with timestamps, tag prefixes, and 5MB rotation
-
-## Service Mode
-
-ws-scrcpy-web can run as a background **service** that starts at boot/login and survives logout. Install and uninstall are driven from the browser UI on both platforms, but the underlying mechanism is platform-specific:
-
-- **Windows** — a Servy-managed Windows service. Install takes a single UAC prompt; uninstall takes none — the service-mode Node hands off to a Rust operation-server that serves a "please wait" transition page while `post-stop.bat` runs `servy-cli uninstall` and spawns a fresh user-session launcher, then the browser auto-navigates to the new instance. No 30-second port sweep, no manual relaunch.
-- **Linux** — a systemd unit, in one of two scopes: **user-scope** (`~/.config/systemd/user/`, no sudo, starts at login) or **system-scope** (`/etc/systemd/system/`, one `pkexec` prompt, starts at boot). See [Linux install](#linux-install-appimage) for the scope walkthrough and the machine-wide `/opt` option.
-
-## Embedding
-
-> **Cross-origin framing is refused by default.** A page that tries to iframe ws-scrcpy-web without being allow-listed gets a browser refusal ("localhost refused to connect") — the response carries
-> `X-Frame-Options: SAMEORIGIN` and no CSP `frame-ancestors` entry for it. Everything below assumes you have opted the host origin in first, either by adding it to `frameAncestors` in `config.json` or
-> by approving the consent prompt the embedding app raises. Settings → Embedding shows what is currently approved and can revoke it, and can approve an origin ahead of time (it is saved with the dialog's **save**).
-
-> **Embedding from another *site* requires HTTPS.** Browsers withhold a site-scoped cookie from anything a cross-site iframe requests, including the WebSocket handshake the stream rides on — so the app relaxes its cookies to
-> `SameSite=None; Secure; Partitioned` as soon as `frameAncestors` is non-empty. `Secure` is not optional there, so **the browser's connection to the app must be https**, or the cookies stay site-scoped and the embedded stream
-> closes with `1006` while the page itself renders fine. Terminating TLS at a reverse proxy is enough — forward `X-Forwarded-Proto: https` (see the recipe below) and the app will honor it, but only from a proxy on loopback,
-> which is why the proxy should be the only thing that reaches the app. If the app is not reachable over https, `ws-scrcpy-web.log` says so once at the first cookie it issues.
->
-> Same-*site* embedding needs none of this. `SameSite` is judged on registrable domain **plus scheme**, ignoring port, so `http://localhost:5159` framing `http://localhost:8000` is same-site and has always worked —
-> but `http://` framing `https://` is not, and neither is `localhost` framing `127.0.0.1`.
-
-### Embedding: theme bridge
-
-When ws-scrcpy-web is embedded in a cross-origin iframe (once allow-listed, per the note above), the host page can sync
-its dark/light theme via `postMessage`. ws-scrcpy-web's listener and handshake
-fire automatically on load — no extra wiring needed inside ws-scrcpy-web.
-
-**Protocol** (all message types are namespaced with `ws-scrcpy-web:`):
-
-| Direction | Message type | Payload | When |
-|-----------|--------------|---------|------|
-| iframe → parent | `theme-ready` | `{theme: 'dark' \| 'light'}` | One-shot on load; re-sent on demand (see below) |
-| iframe → parent | `theme-changed` | `{theme: 'dark' \| 'light'}` | When ws-scrcpy-web's in-app theme toggle changes the theme |
-| parent → iframe | `theme` | `{theme: 'dark' \| 'light'}` | Host pushes a new theme to the iframe |
-| parent → iframe | `theme-request` | `{}` | Host asks the iframe to re-announce `theme-ready` |
-
-**Minimum host integration:**
-
-```javascript
-// 1) Reply to the iframe's load handshake with your current theme.
-window.addEventListener('message', (e) => {
-    if (e.data?.type === 'ws-scrcpy-web:theme-ready') {
-        const iframe = document.getElementById('ws-scrcpy-iframe');
-        iframe.contentWindow.postMessage(
-            { type: 'ws-scrcpy-web:theme', theme: getMyHostTheme() },
-            e.origin,
-        );
-    }
-    // 2) Sync your host theme when ws-scrcpy-web's in-app toggle fires.
-    if (e.data?.type === 'ws-scrcpy-web:theme-changed') {
-        if (e.data.theme === 'dark' || e.data.theme === 'light') {
-            setMyHostTheme(e.data.theme);
-        }
-    }
-});
-
-// 3) When the host's theme changes, push it to the iframe.
-function pushThemeToIframe(theme) {
-    const iframe = document.getElementById('ws-scrcpy-iframe');
-    if (!iframe?.contentWindow) return;
-    const origin = new URL(iframe.src, location.href).origin;
-    iframe.contentWindow.postMessage({ type: 'ws-scrcpy-web:theme', theme }, origin);
-}
-```
-
-**Race condition note.** The iframe posts `theme-ready` once at module load. If
-your host attaches its `message` listener AFTER iframe load (e.g., inside
-`iframe.onload`), the one-shot post arrives before you're listening. Three
-ways to avoid losing it:
-
-1. **Recommended:** attach the host's `message` listener as early as possible — for JS-created iframes, before adding the element to the DOM or setting `src`; for static HTML iframes, in an inline `<script>` in `<head>` (so it runs before the iframe begins loading).
-2. **Or:** post `{type: 'ws-scrcpy-web:theme-request'}` to the iframe once
-   you're ready — ws-scrcpy-web replies with a fresh `theme-ready`.
-3. **Don't** rely on `iframe.onload` as your listener-attach point; the
-   handshake may already have fired by then.
-
-**Programmatic API.** When the bundle loads as a UMD library, the helpers
-land on `window.WsScrcpy.*`:
-
-```javascript
-WsScrcpy.getTheme();                       // 'dark' | 'light'
-WsScrcpy.setTheme('light');                // applies + persists
-WsScrcpy.installThemeEmbedListener();      // already called on load
-WsScrcpy.notifyThemeReady();               // already called on load
-WsScrcpy.notifyThemeChanged();             // called by in-app toggle button
-```
-
-ESM consumers can `import` the same names from the package entry.
-
-**Security: `allowedOrigins`.** The default listener accepts theme messages
-from any origin (`allowedOrigins: '*'`). This is permissive by design so the
-helper is drop-in for any embedder — note that the ws-scrcpy-web app itself
-does **not** use that default: it scopes its own listener to same-origin plus
-whatever `frameAncestors` permits. `allowedOrigins` also accepts a function,
-evaluated per message, for callers that do not know their allowlist at install
-time. Locked-down deployments should call
-
-```javascript
-WsScrcpy.installThemeEmbedListener({
-    allowedOrigins: ['https://your-host.example'],
-});
-```
-
-themselves and skip the auto-install. Currently the only way to override the auto-install is to fork
-`src/app/index.ts` (or shadow it via your bundler) and replace the
-`installThemeEmbedListener()` call with your locked-down options. A
-dedicated build flag may land in a future minor. Origin validation gates BOTH `theme` push messages AND
-`theme-request` pings — non-allowed origins cannot ask the iframe to
-re-announce `theme-ready`, preventing leak vectors.
-
-## Downloads
-
-Get the latest release from the [Releases page](https://github.com/bilbospocketses/ws-scrcpy-web/releases/latest):
-
-- **Windows MSI** (recommended) — installs per-machine to `C:\Program Files\WsScrcpyWeb\` with writable runtime state at `C:\ProgramData\WsScrcpyWeb\`. Requires admin (UAC) to install and to apply each subsequent update. Multi-user friendly; service mode and local mode share configuration.
-- **Windows portable ZIP** — unzip and run; no install required, no auto-updates. Useful for air-gapped setups.
-- **Linux AppImage** — download `WsScrcpyWeb-linux-stable.AppImage` (or `WsScrcpyWeb-linux-beta.AppImage` for the beta channel), `chmod +x` it, and run. See [Linux install](#linux-install-appimage) below.
-- **Docker image** — `docker pull bilbospocketses/ws-scrcpy-web:beta` (the beta channel; `:latest` / `:stable` follow the first stable release). Every release also gets its own immutable `:X.Y.Z[-beta.N]` tag. See [Docker](#docker) below.
-
-Release artifacts are currently **unsigned** (no Authenticode / codesign) — code-signing is under evaluation. Each release ships a `SHA256SUMS` file and [Sigstore SLSA Provenance](https://slsa.dev/) attestations for supply-chain verification.
-
-For data-handling details, see our [Privacy Policy](PRIVACY.md).
-
-## Requirements
-
-Required for building from source. See [Self-Contained Deployment](#self-contained-deployment) for standalone installations that bundle everything.
-
-- **Node.js** 24 LTS or later
-- **ADB** — nothing to install. The dependency manager downloads ADB into the app's own `dependencies/` folder on first run and invokes it by absolute path; **`PATH` is deliberately never consulted**, so putting ADB on `PATH` will not make the app find it (see [CONTRIBUTING](CONTRIBUTING.md))
-- **Android device** with USB debugging or wireless debugging enabled
-- **A secure browsing context for streaming** — `https://`, or `http://localhost` / `http://127.0.0.1`. The video decoder the player uses (WebCodecs) is exposed only in a secure context, so reaching the app at `http://<lan-ip>:8000` lists devices but offers no connect link; the device card explains this and names the loopback URL to open instead. Browser flags do not work around it — Chromium's `--unsafely-treat-insecure-origin-as-secure` was measured not to restore `VideoDecoder`. To stream from another machine, turn on **Local HTTPS** (Settings → Local HTTPS) for the quickest fix on your own LAN (host installs only; a container uses a reverse proxy), or put the app behind a real TLS reverse proxy for anything beyond one.
-
-## Quick Start (Developer Mode)
-
-For development and building from source:
-
-```bash
-npm install
-npm start
-```
-
-Open `http://localhost:8000` in your browser.
-
-This mode requires Node.js on your system; ADB is fetched into `dependencies/` on first run and resolved by absolute path, never from `PATH`. See [Self-Contained Deployment](#self-contained-deployment) for a standalone installation that bundles everything.
-
-### Optional: `npm run fetch-prebuilts`
-
-Pre-populates the `node-pty` native binary for air-gapped or offline setups.
-Normally unnecessary — `npm start` and `npm test` trigger this implicitly
-on first run via the resolver and vitest globalSetup respectively.
-
-## Self-Contained Deployment
-
-ws-scrcpy-web ships as a fully self-contained app with no system-wide installations required. There are three deployment paths, all of which keep all dependencies inside the install folder — no PATH changes, no global installs, no admin/root needed.
-
-### Deployment paths
-
-| Path | Best for | Notes |
-|------|----------|-------|
-| **Docker image** (`bilbospocketses/ws-scrcpy-web`) | Home servers, NAS boxes, anything already running containers | One `docker run` with a `/data` volume. Wireless ADB only; put it behind HTTPS to stream from another machine. See [Docker](#docker). |
-| **Windows MSI** (`*.msi`, recommended) | Most Windows users; multi-user / service-mode setups | Per-machine install to `C:\Program Files\WsScrcpyWeb\`. Writable state at `C:\ProgramData\WsScrcpyWeb\` (Authenticated Users:Modify). Velopack auto-updates apply with one UAC prompt each. |
-| **Linux AppImage** | Most Linux users | Single executable. Velopack-managed auto-updates. Optional systemd service mode. |
-| **Portable ZIP** (Windows) / source build | Air-gapped or no-install setups | Extract and run; layout shown below. |
-
-### What's in the box (portable / source layout)
-
-```
-ws-scrcpy-web/
-  dist/                    -- compiled application (server + browser bundles)
-    public/                -- browser UI (HTML, JS, CSS)
-    index.js               -- server entry point
-  seed/
-    scrcpy-server/         -- the scrcpy-server this build vouches for, copied into dependencies/ on first run
-  dependencies/            -- populated automatically on first run
-    node/                  -- Node.js runtime + node-pty native files
-    adb/                   -- ADB platform-tools
-    scrcpy-server/         -- Android-side binary, pushed to devices via ADB
-  start.cmd                -- Windows launcher
-  start.sh                 -- Linux launcher
-```
-
-(The MSI and AppImage paths use Velopack's own install layout — `current/` plus a stable launcher stub — and you don't need to think about it.)
-
-**Windows note:** the launcher writes runtime state (config, logs, downloaded deps) to `%PROGRAMDATA%\WsScrcpyWeb\` regardless of where the app itself lives. On Windows, the `dependencies/` folder under the install or repo directory is effectively unused at runtime — the real `dependencies/` is `%PROGRAMDATA%\WsScrcpyWeb\dependencies\`. On Linux, runtime deps still live under the install/repo `dependencies/` for now.
-
-### Initial setup
-
-1. Run `start.cmd` (Windows) or `./start.sh` (Linux). The launcher script handles the rest.
-2. On first run, the in-app **dependency manager** automatically downloads Node.js, ADB platform-tools, and `scrcpy-server` into `dependencies/` (Windows: `%PROGRAMDATA%\WsScrcpyWeb\dependencies\`; Linux: alongside the install). You'll see a progress banner; it takes a minute or two depending on your connection.
-3. Once dependencies are populated, the server starts. Open `http://localhost:8000` in your browser.
-4. From the home page's **Dependencies** panel you can re-check or update Node.js, ADB, and `scrcpy-server` later with one click — they're independently swappable without rebuilding the app.
-
-If you prefer to avoid the network fetch on first run (air-gapped setups, slow connections), you can pre-populate the dependencies folder manually. **On Windows the target is `%PROGRAMDATA%\WsScrcpyWeb\dependencies\`**; on Linux it's the `dependencies/` folder next to `dist/`.
-
-- **Node.js** — extract a Node.js LTS Windows / Linux build into `<deps>/node/` (the binary should be at `<deps>/node/node.exe` or `<deps>/node/node`).
-- **ADB** — extract Android `platform-tools` into `<deps>/adb/`.
-- **scrcpy-server** — save the appropriate `scrcpy-server-vX.Y.Z` binary as `<deps>/scrcpy-server/scrcpy-server`.
-
-The dependency manager skips downloads when it finds an existing valid copy.
-
-### What Updates Automatically (In-App Updater)
-
-The Dependencies tab in Settings lets you check for updates and install them with one click. These runtime dependencies are standalone binaries that can be safely swapped without recompiling the application:
-
-| Dependency | What it does | How it updates |
-|------------|-------------|----------------|
-| **Node.js + node-pty** | Runs the server; provides ADB shell terminal | Downloads new binary from nodejs.org and checks it against the release's `SHASUMS256.txt`. Paired update -- both must match. Requires app restart (handled automatically by the launcher script). |
-| **ADB (platform-tools)** | Communicates with Android devices | Downloads the latest versioned zip from Google, checks its size and SHA-1 against Google's repository listing, extracts, swaps files. ADB server is stopped and restarted automatically. No app restart needed. |
-| **scrcpy-server** | Runs on Android devices to capture screen and audio | Downloads new binary from Genymobile/scrcpy releases and checks it against the release's `SHA256SUMS.txt`. Replaces `<deps>/scrcpy-server/scrcpy-server`. No restart needed -- new binary is pushed to devices on next connection. |
-
-A download that does not match its publisher's checksum is refused, and nothing is installed.
-
-### What Requires a New Release (Build-Time Dependencies)
-
-These dependencies are compiled into the `dist/` output during the build process. They cannot be updated independently -- a new version of ws-scrcpy-web must be built and deployed:
-
-| Dependency | Why it's compiled in | Update approach |
-|------------|---------------------|----------------|
-| **ws** (WebSocket library) | Bundled into `dist/index.js` by webpack. This is the core communication layer between browser and server -- too critical to hot-swap without testing. A bad ws update could silently break all connections. | Checked before each release (see `docs/TECHNICAL_GUIDE.md` section 12). Updated, tested, and shipped as part of a new ws-scrcpy-web version. |
-| **@xterm/xterm** (terminal renderer) | Bundled into `dist/public/bundle.js`. Major versions can change APIs that affect the shell feature. | Updated during release builds. |
-| **TypeScript, webpack, Biome, css-loader, etc.** | Build toolchain only -- not shipped to users at all. These compile the source into `dist/` and are never present in a deployment. | Updated by developers before building a new release. |
-
-### How the Launcher Works
-
-Production installs (MSI/AppImage) use a compiled Rust launcher (`ws-scrcpy-web-launcher.exe` on Windows; the AppImage's bundled launcher on Linux) that supervises Node.js and manages the full application lifecycle. Items marked *(Windows)* below are Windows-specific; the Linux launcher uses the platform equivalents (e.g. `pkexec`/polkit for privileged prompts):
-
-1. **Supervisor loop** -- spawns Node as a child process, monitors its exit code. Exit code 75 or a `.restart` marker triggers a respawn (used by the dependency updater after Node.js updates, by a port change, and by Settings → Server → restart the server). Normal exit shuts down cleanly. In local mode a crashed server is restarted up to 3 times in a row (the count starts again once it has stayed up 60 seconds); after that the launcher logs `3 restart attempts, won't retry, review error logging` and stays down. An installed service leaves crash restarts to systemd or the Windows service's recovery.
-2. **Tray** -- Windows: the tray supervisor spawns the standalone tray helper and polls every 10 seconds, respawning it if it crashes or is killed. Linux: the tray is a thread inside the launcher (`ksni`, StatusNotifierItem over D-Bus) for local and user-scope-service runs; it lives and dies with the instance, so there is nothing to respawn, and it stands down silently when the desktop has no StatusNotifier host.
-3. **Privileged elevation** -- Windows uses `ShellExecuteExW` with the `runas` verb (UAC) for service install / update apply, with no PowerShell intermediary; Linux uses `pkexec`/polkit for the equivalent graphical prompt.
-4. **Operation-server** -- during service uninstall or app update, spawns a minimal Rust HTTP server on the same port to serve a "please wait" transition page. The operation-server detects when the new instance is ready and winds down.
-5. **Job object** *(Windows)* -- all child processes (Node, tray, operation-server) are assigned to a Windows Job Object with `KILL_ON_JOB_CLOSE`, so nothing orphans if the launcher is killed.
-6. **Single-instance guard** -- prevents duplicate launcher instances (a named mutex on Windows; a file lock on Linux).
-
-In dev mode, `start.cmd` / `start.sh` provide a simpler restart loop for the same purpose.
-
-### Linux install (AppImage)
-
-Linux releases ship as a single self-contained AppImage built with [Velopack](https://velopack.io/). No package manager, no sudo (for user-scope installs), no system-wide changes.
-
-1. Download `WsScrcpyWeb-linux-stable.AppImage` (stable channel) or `WsScrcpyWeb-linux-beta.AppImage` (beta channel) from the [Releases](https://github.com/bilbospocketses/ws-scrcpy-web/releases) page.
-2. Make it executable: `chmod +x WsScrcpyWeb-linux-stable.AppImage`
-3. Run it: `./WsScrcpyWeb-linux-stable.AppImage`
-4. It opens `http://localhost:8000` in your browser on launch — if it doesn't, open it yourself.
-
-The first-run welcome modal offers to install ws-scrcpy-web as a systemd service. Two scopes are available:
-
-- **just for me (no sudo)** — installs to `~/.config/systemd/user/WsScrcpyWeb.service`. Starts at login. `loginctl enable-linger` is invoked best-effort so the service survives logout.
-- **all users (requires sudo)** — installs to `/etc/systemd/system/WsScrcpyWeb.service`. Starts at boot. From the desktop the install triggers a single `pkexec` graphical password prompt and runs the app once as root (`pkexec WsScrcpyWeb.AppImage --install-system-service`) to stage `/opt`, write the unit, and `systemctl enable --now`; the app then switches over to the service on its own. Falls back gracefully if `pkexec` isn't installed: the error tells you to install polkit (`sudo dnf install polkit` on Fedora) or pick user scope. On a headless server, install it directly from a root shell instead: `sudo ./WsScrcpyWeb-linux-*.AppImage --install-system-service` (also `--uninstall-system-service [--keep-state]` and `--system-service-status`).
-
-You can also install/uninstall the service later from Settings → Service.
-
-**Settings → Server (Linux)** has two further actions. **Install for all users** relocates the app to a machine-wide `/opt` install under a single `pkexec` prompt (the control grays out once it's installed system-wide). **Uninstall…** completely removes ws-scrcpy-web — including any installed user- or system-scope service and a machine-wide `/opt` install — in a single pass, with at most one `pkexec` prompt; a **keep my settings & logs** option preserves your `config.json` and logs (so a later reinstall reuses your saved port) while still removing the program and its bundled dependencies.
-
-#### AppImage placement caveat
-
-For a **user-scope** service the systemd unit's `ExecStart=` points at the AppImage where it lived at install time, so **do not move or rename the AppImage after installing a user-scope service** — it will fail to start on next login. If you need to relocate it, uninstall the service first, move the file, then re-install. A **system-scope** service is unaffected: the installer stages a copy of the AppImage to `/opt/ws-scrcpy-web/` (labeled `bin_t` for SELinux) and points `ExecStart=` there, so moving your home AppImage does not break it.
-
-#### Verifying the AppImage signature
-
-AppImage signing is currently under evaluation; releases ship **unsigned** for now. Verify integrity via the `SHA256SUMS` file in the release. When a Linux signing path is wired in, this section will document the verification steps for detached signatures.
-
-#### glibc requirement
-
-The bundled `node-pty` native binary is built against glibc. Musl-based distros (Alpine and similar) are not supported. Run on glibc-based distros: Ubuntu, Debian, Fedora, Arch, openSUSE, etc. — anything that ships glibc 2.31+ should work.
-
-#### libfuse2 — not required
-
-The AppImage needs no host `libfuse2`. Packaging swaps in the static [type-2 AppImage runtime](https://github.com/AppImage/type2-runtime) (libfuse is statically linked), and the in-app updater uses Velopack's bundled type-2 runtime for the update mount — so on any glibc-based distro the app **self-updates** without a host `libfuse2`, and on Fedora 40+, Arch, and most distros it **launches** straight from a `chmod +x` (no libfuse2 install needed).
-
-> **Ubuntu 23.10+ note (24.04 / 26.04).** These releases restrict unprivileged user namespaces (`kernel.apparmor_restrict_unprivileged_userns=1`). That restriction does **not** stop this AppImage: it mounts itself through the `fusermount3` helper, not a user namespace, and it has been verified launching on stock Ubuntu 26.04 with the restriction on and no `libfuse2` installed — from a terminal and by double-click in Files. Make it executable first: on GNOME, double-clicking a file without `+x` opens it in Disk Image Mounter instead of running it. If it still won't start, run it extracted with `APPIMAGE_EXTRACT_AND_RUN=1 ./WsScrcpyWeb-linux-*.AppImage` and open an issue with the terminal output.
-
-#### Tray icon
-
-On Linux the launcher shows a StatusNotifierItem tray icon wherever a StatusNotifier host is running (KDE Plasma out of the box; GNOME only with the AppIndicator extension). Hover for the mode (`ws-scrcpy-web` or `ws-scrcpy-web (service)`), left-click or **Open ws-scrcpy-web** to open the app, **Exit… → stop the server and quit** to stop it cleanly (the launcher sends Node SIGTERM, so the adb teardown runs). Where there is no host — stock GNOME, Fedora Workstation — the icon simply does not appear and `launcher.log` says so once; use Settings → Server → **stop the server and close the app** there. System-scope services have no desktop session and never show a tray.
-
-## Configuration
-
-Almost all configuration is managed through the in-app **Settings** dialog (gear icon, top-right of the home page):
-
-| Field | Default | Where to change it |
-|-------|---------|--------------------|
-| `webPort` | `8000` (auto-shifts if busy) | Settings → Server → http port |
-| `httpsPort` | `8443` | Settings → Server → https port (editable once Local HTTPS has generated a certificate and mkcert is installed, or its state cannot be read) |
-| `installMode` | (set on first run) | Welcome modal / Settings → Service |
-| `firstRunComplete` | `false` | Set automatically after first-run modal |
-| `autoUpdate` | `true` | Settings → Updates → Automatically download updates |
-| `updateCheckIntervalMinutes` | `60` | Settings → Updates → Check interval |
-| `channel` | `beta` on a beta build, `stable` on a release build (derived from the build's own version unless a channel was saved in Settings; with nothing saved there, `"channel": "beta"` in `config.json` also counts, but its `"stable"` does not move a beta build) | Settings → Updates → Channel |
-| `githubOwner` | `bilbospocketses` | Settings → Updates → GitHub owner (override for forks) |
-| `frameAncestors` | `[]` (nothing may frame the app) | Settings → Embedding, or edit `config.json` |
-| `allowedHosts` | `[]` (localhost + IP literals only) | `config.json` only — server-only, never exposed via the API. **For domain names only — adding an IP address does nothing**, because raw IPs already pass; see [Access control](#access-control) |
-| `adbPath` | (the managed adb under `dependencies/`) | `config.json` only — the path to a different adb executable. Rarely needed; the log's `adbPath=… (source=…)` line says which one is in use. There is no `ADB_PATH` environment variable |
-
-**Where these are stored depends on which one it is**, which matters if you ever go looking for one by hand. `webPort`, `installMode` and `firstRunComplete` live in `config.json` next to the running app, because the launcher has to read them before the server — and the database — is up; `httpsPort`, `frameAncestors` and `allowedHosts` are in that file too, and so is `allowRemoteAdmin` once remote admin is turned on (it is written only while on). The four update settings (`autoUpdate`, `updateCheckIntervalMinutes`, `channel`, `githubOwner`) are stored in the database instead, in the `app_settings` table of `wsscrcpy.db` under the data root. A value for one of those in `config.json` is still read as the starting point, but once it has been set in Settings the stored value wins — so editing `config.json` alone may appear to do nothing.
-
-**Settings is a tabbed dialog, and most settings are staged until you press Save.** The tabs are Users, Embedding, Updates, Service, Dependencies, Server and Local HTTPS — which ones you see depends on your role. Editing a value does not write it; it stages it, and the dialog's single **save** button (bottom right, grayed out until something is staged) applies the whole set at once. Save always shows a **review screen listing every pending change** as `setting: old → new` before anything is written, so nothing is applied that was not named first.
-
-Switching tabs keeps your edits and never prompts. Closing the dialog with unsaved changes asks whether to **save, discard or cancel** — cancel puts you back in the dialog with everything still staged. If the server refuses a change, the dialog stays open with your edits intact and says which one it refused.
-
-Buttons are not settings and are never staged: install/uninstall the service, add or delete a user, install a dependency, reset, log out, stop & exit and the rest all act immediately when clicked, and never appear on the review screen. The **GitHub owner** field on the Updates tab is the one text field that still writes as soon as you leave it.
-
-**Changing the http port restarts the server.** It is applied last, after every other change in the batch, and the browser then redirects itself to the new port a few seconds later — long enough for the server to come back up. The app is not crashing. Changing the **https port** restarts the server too (one restart covers both); a page open over https follows it to the new https port, and one open over plain http reloads where it is. While Local HTTPS has a certificate the two ports must differ.
-
-Not a stored field, but reached the same way: **Settings → Server → stop the server and close the app** cleanly stops the server and quits the app — the clean-exit path on desktops without a tray host (stock GNOME), disabled in service mode; where a StatusNotifier host exists (KDE Plasma) the tray's **Exit… → stop the server and quit** does the same. Next to it, **restart the server** restarts it in place and reloads the page once it is back; unlike stop, it is available under a service and in a container too.
-
-**The update channel decides which releases are offered, and it works in both directions.** With Settings → Updates → Channel on `stable`, any stable release with a higher version than the one you are running is offered and installs, whether what you are running is a stable build or a beta; on `beta`, the same goes for betas. Moving beta → stable or stable → beta needs no reinstall — flip the radio and save. "Higher" means a higher version, and a prerelease sorts below its own release: a stable `0.1.30` is never offered `0.1.30-beta.N`, because that is a lower version, so a stable install switched to beta waits for the first beta of a later version (`0.1.31-beta.1`). The updater finds the selected channel's newest release however many releases of the other channel came after it.
-
-A few advanced switches are only available via environment variables:
-
-| Variable | Purpose |
-|----------|---------|
-| `DEPS_PATH` | Override the location of the `dependencies/` folder (used by the installer to point at the per-user data dir while the app itself lives under `current/`). |
-| `VELOPACK_FEED_URL` | Force the Velopack auto-updater to use a custom feed: a plain local folder path, or an http(s) URL (mostly useful for the manual update-flow test in `docs/RELEASING.md`). |
-| `WS_SCRCPY_RELEASE_URL_BASE` | Linux only: fetch the in-app update's AppImage and `SHA256SUMS` from `<base>/v<version>/<asset>` instead of GitHub's release downloads (a test or mirror seam; the SHA-256 check still runs). |
-| `WS_SCRCPY_MKCERT_URL_BASE` | Read mkcert's latest-release lookup, downloads and attestation lookup from `<base>/releases/latest`, `<base>/releases/download/<tag>/<asset>` and `<base>/attestations/sha256:<digest>` instead of GitHub (a test or mirror seam; the build-provenance check still runs against the fork's own release workflow). |
-| `WS_SCRCPY_NODE_DIST_BASE` | Read Node.js's release index, archive and checksum list from `<base>/index.json`, `<base>/v<version>/<archive>` and `<base>/v<version>/SHASUMS256.txt` instead of `https://nodejs.org/dist` (a test or mirror seam; the SHA-256 check still runs). |
-| `WS_SCRCPY_SKIP_BOOT_LATEST` | Set to `1`, startup skips the latest-version lookup for every dependency that is already installed (a test setting; the end-to-end suite uses it to spare GitHub's rate limit). A missing dependency is still looked up, and "check for updates" and updates are unaffected. |
-
-### Access control
-
-ws-scrcpy-web is **open by default** — with login off, anyone who can reach the port can control connected devices, so run it only on a trusted local/LAN network. **Opt-in login is available** (Settings → Users): add a user with a password and the app requires a session from then on.
-
-With login off, the LAN is trusted **for the device surface**. The server blocks cross-site (CSRF) and DNS-rebinding attacks with a Host allowlist, an Origin check, a per-launch token cookie, and a framing policy; by default it accepts only `localhost` and IP-literal hosts, and refuses cross-origin framing outright. Those defenses stop a malicious *web page* and a rebound *domain name*. They are not a login: the token cookie is handed to anything that can fetch the page, so a client already on your network can drive devices. **Turning login on is what makes that a boundary.**
-
-**Access and STREAMING are two different gates, and only one of them is ours.** Everything in this section is about who the *server* will answer. Whether the *browser* will play video is decided separately, by the browser, from the address bar alone: the WebCodecs decoder exists only in a secure context (`https://`, `http://localhost`, `http://127.0.0.1`). So a signed-in admin on `http://<lan-ip>:8000` gets the full device list, settings and pairing — and still no video, because no server-side setting can reach that decision. If what you want is to *watch a screen* from another machine, none of the options below are the answer — see the secure-context entry under [Requirements](#requirements), and [Serving the container over HTTPS (reverse proxy)](#serving-the-container-over-https-reverse-proxy) for the setup.
-
-**A third option now exists for a home LAN: Local HTTPS** (Settings → Local HTTPS). It generates a certificate for this machine's LAN IP or a hostname you choose — using a vendored, locally-run `mkcert`, with nothing sent anywhere and no elevation required — and starts an HTTPS listener next to the existing plain-HTTP one. mkcert is not downloaded until you want it: install it from Settings → Dependencies (its **install** button; the note at the top of the Local HTTPS tab links there), and **generate** stays disabled until you have. The HTTPS listener's port is on Settings → Server (**https port**, 8443 by default), saved with the dialog's **save** like the http port, and editable once a certificate exists (and mkcert is installed, or its state cannot be read). Install the CA it hands you and the browser's certificate warning goes away; even without installing it, clicking through that warning is still a secure context, so streaming works from another machine either way. It does **not** replace [the reverse-proxy path](#serving-the-container-over-https-reverse-proxy) for anything beyond a home LAN: there is no ACME, no publicly trusted certificate, and every device that should stop warning needs the CA installed on it by hand. See `docs/TECHNICAL_GUIDE.md` for how the certificate is stored and what narrowing plain HTTP afterwards does. Local HTTPS is a host-install feature: in a container it is switched off, and a reverse proxy is the only supported way to add HTTPS.
-
-**Administering the server is separate, and needs proof that you are the operator** — you are on the machine itself (loopback), or you are a signed-in admin. Otherwise the admin routes answer `403`: users, configuration, service control, dependencies, updates, shutdown, and any Local HTTPS change (generating or revoking the certificate, the HTTPS port, plain-HTTP exposure). Another machine can still open the Local HTTPS panel and download the CA, since installing it there is the point. The app shows a banner explaining which state it is in, with a **Set up sign-in** button; that banner is informational everywhere but actionable only from the machine itself, so it cannot be used to open the server up from off-box.
-
-To allow admin from another machine **without** setting up sign-in, check **remote admin without sign-in** on Settings → Users and save (from the machine itself), or set `WS_SCRCPY_ALLOW_REMOTE_ADMIN=1` in the server's environment (or `"allowRemoteAdmin": true` in `config.json`). That makes anyone who can reach the server an administrator, so use it only on a network you fully control; the warning about it lives under that checkbox, which also turns it off again (the environment variable, while set, keeps it on). **In a container nobody is ever on loopback**, so a Dockerized deployment needs either that variable or sign-in enabled — see [`SECURITY.md`](SECURITY.md#containers) for how to set up sign-in in a container.
-
-Both cookies the app issues — the per-launch token and the login session — are `HttpOnly` and site-scoped (`SameSite=Strict` and `Lax` respectively). Allow-listing an embedder in `frameAncestors` relaxes both to `SameSite=None; Secure; Partitioned`, because a site-scoped cookie is never sent from a cross-site frame. **This does not weaken the CSRF defense**, which is the Origin/Host match, not `SameSite`: a cross-origin page still fails the Origin check on every `/api` call and every handshake. `Partitioned` (CHIPS) keys each cookie to the embedding top-level site, so an embedded session is its own session and does not ride on the one in your own tab.
-
-**`allowedHosts` is for domain names, and only domain names.** `localhost` and raw IP addresses already pass the Host check by default, so **putting an IP in `allowedHosts` changes nothing** — it is not how you grant another machine access, and it has no effect on streaming. It exists because a bare domain is otherwise refused outright, since DNS-rebinding attacks need a domain the attacker can re-point.
-
-To serve it on a domain name behind a TLS-terminating reverse proxy, add the domain(s) to a server-only `allowedHosts` array in `config.json` (read at startup, never exposed via the in-app API), and make sure the proxy forwards the original `Host` header:
-
-```json
-{ "allowedHosts": ["devices.example.com"] }
-```
-
-To let another local app embed this one in an iframe, add its origin to `frameAncestors` in `config.json`, approve the consent prompt the embedding app can raise, or add it in Settings → Embedding, which also lists and revokes what you have approved. Cross-origin framing is refused until you do:
-
-```json
-{ "frameAncestors": ["http://localhost:5159"] }
-```
-
-See [`SECURITY.md`](SECURITY.md) and `docs/TECHNICAL_GUIDE.md` §24 for the full access-control model.
-
-## Logging
-
-The server logs all output to `ws-scrcpy-web.log`. Every line includes an ISO 8601 timestamp and a module tag (e.g., `[ScrcpyConnection]`, `[Server]`). The log file rotates at 10 MB (per write), keeping one backup (`.log.1`). In dev (`npm start`, no launcher) console output is preserved in the terminal; under the launcher the console echo is suppressed and `ws-scrcpy-web.log` is the single source of truth.
-
-**Log file locations:**
-
-- **Installed (Windows / Velopack MSI):** `C:\ProgramData\WsScrcpyWeb\logs\` holds all logs — each rotated at 10 MB (one `.1` backup):
-  - `ws-scrcpy-web.log` — **canonical Node-server log** (the `Logger` file)
-  - `launcher.log` — **canonical launcher log** (Rust `common::log` file); `tray.log` is the same for the tray helper
-  - `server.log` — **thin crash-catcher**: launcher redirects Node child stdout/stderr here, but `Logger` suppresses its own echo under the launcher (`isTTY` gate), so this file only fills on raw crashes / native failures
-  - `service.log` — **thin crash-catcher** (service mode only): service manager captures launcher stderr here, but the launcher suppresses normal lines under a service (`is_terminal()` gate), so this file only fills on raw launcher panics
-- **Installed (Linux AppImage / systemd):** logs live under the Linux data root — `~/.local/share/WsScrcpyWeb/logs/` for a user-scope install, `/var/lib/ws-scrcpy-web/logs/` for a system-scope service — same file names and 10 MB rotation as Windows (`ws-scrcpy-web.log`, `launcher.log`; `service.log` only fills on raw launcher panics under the systemd unit).
-- **Dev / `npm start`:** `ws-scrcpy-web.log` lands at the project root (legacy dev fallback); `server.log` / `service.log` are absent.
-
-See `docs/TECHNICAL_GUIDE.md` section 15 for details on the Logger utility and adding logging to new modules.
+- Live screen mirroring and remote control: D-pad, keyboard and mouse.
+- Detailed device information: Android, hardware, RAM, storage, network and display.
+- Drag-and-drop APK installation with upload progress and Android error messages.
+- Application list with search, user/system/disabled filters and uninstall confirmation.
+- File browser, transfers and ADB terminal inherited from ws-scrcpy-web.
 
 ## Docker
 
-The image is published to Docker Hub as [`bilbospocketses/ws-scrcpy-web`](https://hub.docker.com/r/bilbospocketses/ws-scrcpy-web) and mirrored to [`ghcr.io/bilbospocketses/ws-scrcpy-web`](https://github.com/users/bilbospocketses/packages/container/package/ws-scrcpy-web) on every release: `:beta` follows the beta channel (every `0.1.30-beta.N` also gets its own immutable tag), and `:latest` / `:stable` will follow the first stable release. `linux/amd64` only for now — Google publishes no arm64 Linux `platform-tools`, so an arm64 image would start and then fail on the first device. Pull from GHCR if Docker Hub's anonymous rate limit is a problem for you.
+For **Linux amd64**, use this Compose file in Dockge or with `docker compose up -d`:
 
-```bash
-docker run -d --name ws-scrcpy-web -p 127.0.0.1:8000:8000 -v wsdata:/data bilbospocketses/ws-scrcpy-web:beta
+```yaml
+services:
+  shield-controller:
+    image: ghcr.io/aerya/shield-controller:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8123:8000"
+    environment:
+      WS_SCRCPY_ALLOW_REMOTE_ADMIN: "1"
+    volumes:
+      - ./data:/data
 ```
 
-(Bound to loopback on purpose; see the second note below before publishing it on a LAN interface.) The repo's `docker-compose.yml` is the developer and CI quickstart instead — it builds the image from source and publishes it on `127.0.0.1:8123`. Everything mutable lives on `/data` — `config.json`, the SQLite store, and the dependencies the container downloads on first boot (adb, ~9 MB; the health check allows 180 s for that). Update with `docker pull` and re-create the container; the volume carries your state across.
+Open **http://localhost:8123** on the Docker host. For access from another device, configure an HTTPS reverse proxy and authentication. The environment variable above grants administrative access to anyone able to reach the service.
 
-Four things to know before relying on it:
+Build locally: `docker build -t shield-controller:local .`
 
-- **Wireless ADB only.** The container connects to devices over the network (`adb connect <ip>:<port>`); there is no USB pass-through, by design.
-- **Streaming needs a secure context.** The browser's video decoder (WebCodecs) is only available on `https://` or `localhost`, so opening the container over plain `http://<lan-ip>:8000` shows the device list but no connect link. The device card says so, and names the loopback URL to use instead. Open it on the serving machine, or put it behind a TLS reverse proxy. A reverse proxy is the only supported way to add HTTPS to the image: the app's own Local HTTPS is a host-install feature and is switched off in a container.
-- **Network discovery needs your LAN subnet.** On Docker's default bridge network the container sees only Docker's own subnet, so **Scan Network** asks you to add your LAN's (for example `192.168.1.0/24`). The port-5555 probe reaches your LAN through Docker; finding devices over mDNS (Quick Scan, and pairing by QR) needs the container on the host's network (`--network host`, or `network_mode: host` in compose).
-- **Running as another user.** The image starts as root only long enough to take ownership of `/data`, then runs as uid 1000. To run it as a different uid (`--user 1234:1234`, or compose `user:`), `/data` has to belong to that uid first. The container stops at once and prints this command if it does not:
+## Connect your Shield
 
-  ```bash
-  docker run --rm -u 0 -v wsdata:/data --entrypoint chown bilbospocketses/ws-scrcpy-web:beta -R 1234:1234 /data
-  ```
+1. Enable developer options: **Settings → Device Preferences → About → press Build 7 times**.
+2. Enable **Network debugging** and note the Shield's IP address.
+3. Add `SHIELD_IP:5555` in the WebUI and accept the authorization prompt on the TV.
+4. Use **device info** or **applications / APK** on the device card.
 
-### Serving the container over HTTPS (reverse proxy)
+Ethernet and Wi-Fi both work. No router port forwarding is needed.
 
-The two notes above meet in the common case: you run the container on one machine and want to stream from another. A plain `http://<lan-ip>:8000` will list devices but not stream, because the browser only exposes its video decoder in a secure context. The answer is a TLS-terminating reverse proxy on a name you control, in front of the loopback-bound container. Three things have to be true, and each one is a specific failure if it is not:
+## Notes
 
-1. **Tell the app its name.** `allowedHosts` in `config.json` (on the `/data` volume, e.g. `docker exec ws-scrcpy-web sh -c 'cat /data/config.json'`) must list the domain, or every request arriving with that `Host` is refused as a possible DNS-rebinding attack. It is read at startup only, so restart the container after editing it. Details in [SECURITY.md](SECURITY.md#access-control).
-2. **Forward `Host` unchanged.** The Origin check compares the browser's `Origin` against the request's own `Host`; a proxy that rewrites `Host` to `localhost` makes every API call look cross-origin and it is rejected.
-3. **Pass WebSockets through.** Device streams, the shell and the scan all ride on WebSocket upgrades; a proxy that does not forward the `Upgrade` / `Connection` headers serves the page and then nothing moves.
+Single `.apk` files only, up to **512 MiB each**; split bundles (`.apks`, `.xapk`) are unsupported. Installs update existing apps when Android permits it. Uninstall targets **Android user 0**; removing system apps can break TV functions. App names are shown as package identifiers. Some device details may be unavailable without root. Protected video may appear black in screen mirroring.
 
-A fourth rule applies only if you also embed the app in a cross-site iframe: **forward `X-Forwarded-Proto: https`**, or the cookies stay site-scoped and the embedded stream cannot authenticate (see [Embedding](#embedding)). Caddy sets it by default; the nginx block below sets it explicitly. The app honors the header only when the request arrives over loopback, so keep the container bound to `127.0.0.1` as below and nothing on the LAN can claim to be your proxy.
+## Credits & license
 
-**Caddy** does all three by default, so the whole configuration is:
+Based on **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)**, with device management additions by Aerya. Screen mirroring uses **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)**.
 
-```caddyfile
-devices.example.com {
-    reverse_proxy 127.0.0.1:8000
-}
-```
-
-**nginx** needs the headers spelled out:
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name devices.example.com;
-    # ssl_certificate / ssl_certificate_key as usual
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;                # (2) not "localhost"
-        proxy_set_header Upgrade $http_upgrade;     # (3)
-        proxy_set_header Connection "upgrade";      # (3)
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_read_timeout 1h;                      # streams are long-lived
-    }
-}
-```
-
-and, in either case, `{ "allowedHosts": ["devices.example.com"] }` in the container's `config.json` (1). Keep the container itself on `127.0.0.1:8000` as in the `docker run` above — the proxy is the only thing that should reach it. Traefik, HAProxy and the rest work the same way; the three rules are the whole contract.
-
-Every published image passes a [Docker Scout](https://docs.docker.com/scout/) gate in the publish workflow — a fixable critical or high CVE fails the publish — and the Hub repository has Scout analysis enabled, so already-published images are re-evaluated as advisories land.
-
-## Acknowledgments
-
-This project is based on [ws-scrcpy](https://github.com/NetrisTV/ws-scrcpy) by [Sergey Volkov](https://github.com/nicedayzhu) / Netris, JSC. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for full license details.
-
-Screen mirroring powered by [scrcpy](https://github.com/Genymobile/scrcpy) by [Genymobile](https://github.com/Genymobile) / [Romain Vimont](https://github.com/rom1v).
-
-## License
-
-This project is licensed under the [GNU General Public License v3.0](LICENSE).
+**GPL-3.0-only** — see [LICENSE](LICENSE). Upstream copyright notices are preserved.

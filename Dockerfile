@@ -105,10 +105,10 @@ WORKDIR /app
 # comes back empty from the packages API, leaving the package orphaned in the
 # UI. The label is read at push time, so it only takes effect on the next
 # published release.
-LABEL org.opencontainers.image.source="https://github.com/bilbospocketses/ws-scrcpy-web" \
-      org.opencontainers.image.url="https://github.com/bilbospocketses/ws-scrcpy-web" \
-      org.opencontainers.image.title="ws-scrcpy-web" \
-      org.opencontainers.image.description="Self-hosted, browser-based Android screen mirroring over WebSocket." \
+LABEL org.opencontainers.image.source="https://github.com/Aerya/Shield-Controller" \
+      org.opencontainers.image.url="https://github.com/Aerya/Shield-Controller" \
+      org.opencontainers.image.title="Shield Controller" \
+      org.opencontainers.image.description="NVIDIA Shield management, APK installation and browser screen mirroring." \
       org.opencontainers.image.licenses="GPL-3.0-only"
 
 COPY --from=build /out/tini            /usr/local/bin/tini

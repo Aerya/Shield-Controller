@@ -246,6 +246,10 @@ export class AdbClient {
         await this.exec(['-s', serial, 'push', local, remote]);
     }
 
+    async installApk(serial: string, local: string): Promise<string> {
+        return this.exec(['-s', serial, 'install', '-r', local], { timeoutMs: 180_000 });
+    }
+
     async pull(serial: string, remote: string, local: string): Promise<void> {
         await this.exec(['-s', serial, 'pull', remote, local]);
     }
