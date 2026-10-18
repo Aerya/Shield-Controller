@@ -10,16 +10,16 @@ Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Dock
 
 ## Features
 
-- Screen preview and remote control: D-pad, keyboard and text input.
-- Detailed device information: Android, hardware, RAM, storage, network and display.
-- Drag-and-drop APK installation with upload progress and Android error messages.
-- Application list with search, user/system/disabled filters and uninstall confirmation.
-- Remembered devices reconnect automatically at startup.
-- File browser, transfers and ADB terminal inherited from ws-scrcpy-web.
-- French/English flag buttons and device tools in a side panel.
-- PNG screenshots with preview and download, including over LAN HTTP.
-- Automatic public IP and IPv4/IPv6 DNS detection with provider names, domain tests and Android Private DNS.
-- CPU, RAM, disk usage, available temperatures, Android-declared home and foreground application (optional refresh every 5 seconds).
+- Screen preview and remote control: D-pad, keyboard and text input
+- Detailed information: Android, hardware, RAM, storage, network and display
+- Drag-and-drop APK installation with upload progress and Android error messages
+- Application list with search, user/system/disabled filters and uninstall confirmation
+- Remembered devices reconnect automatically at startup
+- File browser, transfers and ADB terminal
+- French/English interface with tool panels to the right of the device
+- PNG screenshots with preview and download, including over LAN HTTP
+- Automatic public IP and IPv4/IPv6 DNS detection with provider names, domain tests and Android Private DNS
+- CPU, RAM, storage, available temperatures, Android-declared home and foreground application monitoring (optional refresh every 5 seconds).
 
 ## Screenshots
 

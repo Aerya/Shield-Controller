@@ -10,15 +10,15 @@ Gérez votre **NVIDIA Shield / Android TV** depuis un navigateur. Auto-hébergé
 
 ## Fonctions
 
-- Aperçu de l’écran et télécommande : pavé directionnel, clavier et saisie de texte.
-- Informations détaillées : Android, matériel, RAM, stockage, réseau et affichage.
-- Installation d’APK par glisser-déposer, progression du transfert et erreurs Android.
-- Liste des applications avec recherche, filtres utilisateur/système/désactivées et confirmation de désinstallation.
-- Reconnexion automatique des appareils mémorisés au démarrage.
-- Explorateur de fichiers, transferts et terminal ADB hérités de ws-scrcpy-web.
-- Interface FR/EN par drapeaux, panneaux d’outils à droite de l’appareil.
-- Captures d’écran PNG avec aperçu et téléchargement, y compris en HTTP sur le LAN.
-- Détection automatique des IP publiques et DNS IPv4/IPv6 avec nom du fournisseur, test d’un domaine et DNS privé Android.
+- Aperçu de l’écran et télécommande : pavé directionnel, clavier et saisie de texte
+- Informations détaillées : Android, matériel, RAM, stockage, réseau et affichage
+- Installation d’APK par glisser-déposer, progression du transfert et erreurs Android
+- Liste des applications avec recherche, filtres utilisateur/système/désactivées et confirmation de désinstallation
+- Reconnexion automatique des appareils mémorisés au démarrage
+- Explorateur de fichiers, transferts et terminal ADB
+- Interface FR/EN, panneaux d’outils à droite de l’appareil
+- Captures d’écran PNG avec aperçu et téléchargement, y compris en HTTP sur le LAN
+- Détection automatique des IP publiques et DNS IPv4/IPv6 avec nom du fournisseur, test d’un domaine et DNS privé Android
 - Suivi CPU, RAM, stockage, températures disponibles, accueil déclaré par Android et application au premier plan (actualisation facultative toutes les 5 secondes).
 
 ## Captures d’écran
