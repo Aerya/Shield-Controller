@@ -213,6 +213,7 @@ export abstract class BaseDeviceTracker<DD extends BaseDeviceDescriptor, TE exte
             }
             const newRow = this.buildAndTagRow(block, device, udid, context);
             if (existing && newRow) {
+                this.transferRowState(existing, newRow);
                 existing.replaceWith(newRow);
             } else if (existing && !newRow) {
                 // buildDeviceRow produced nothing (defensive) — drop stale node.
@@ -237,6 +238,8 @@ export abstract class BaseDeviceTracker<DD extends BaseDeviceDescriptor, TE exte
      * DeviceTracker overrides this to fetch the device-label map a single time
      * for the whole refresh.
      */
+    protected transferRowState(_previous: Element, _next: Element): void {}
+
     protected fetchRowContext(): Promise<unknown> {
         return Promise.resolve(undefined);
     }

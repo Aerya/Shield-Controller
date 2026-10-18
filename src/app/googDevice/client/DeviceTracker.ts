@@ -1,3 +1,4 @@
+import { Modal } from '../../ui/Modal';
 import '../../../style/devicelist.css';
 import { ACTION } from '../../../common/Action';
 import { audioCaptureSupported, audioEnabledDefault, defaultAudioSourceForSdk } from '../../../common/AudioDefaults';
@@ -355,7 +356,7 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
                 const nameEl = shellLink.closest('.device')?.querySelector('.device-name-text');
                 const label = nameEl?.textContent || device['ro.product.model'] || device.udid;
                 const { ShellModal } = await import('./ShellModal');
-                new ShellModal(device.udid, label, this.params);
+                Modal.inDevicePanel(overlaySection, () => new ShellModal(device.udid, label, this.params));
             });
 
             // Gate shell link on server-side node-pty availability.
@@ -377,7 +378,7 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
                 const nameEl = link.closest('.device')?.querySelector('.device-name-text');
                 const label = nameEl?.textContent || device['ro.product.model'] || device.udid;
                 const { ListFilesModal } = await import('./ListFilesModal');
-                new ListFilesModal(device.udid, label, this.params);
+                Modal.inDevicePanel(overlaySection, () => new ListFilesModal(device.udid, label, this.params));
             });
         });
 
@@ -390,32 +391,43 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
                 button.textContent = text;
                 button.addEventListener('click', async () => {
                     const { DeviceManagerModal } = await import('./DeviceManagerModal');
-                    new DeviceManagerModal(device.udid, device['ro.product.model'] || device.udid, tab);
+                    Modal.inDevicePanel(
+                        overlaySection,
+                        () => new DeviceManagerModal(device.udid, device['ro.product.model'] || device.udid, tab),
+                    );
                 });
                 const cell = document.createElement('div');
                 cell.className = 'desc-block';
                 cell.appendChild(button);
                 overlaySection.appendChild(cell);
             }
-
         }
 
         if (isActive) {
-            for (const [tool, label] of [['screenshot', 'Screenshot'], ['dns', 'DNS / IPv4 / IPv6']] as const) {
+            for (const [tool, label] of [
+                ['remote', 'View / Control'],
+                ['screenshot', 'Screenshot'],
+                ['dns', 'DNS / IPv4 / IPv6'],
+            ] as const) {
                 const cell = document.createElement('div');
                 cell.className = 'desc-block';
                 const button = document.createElement('button');
                 button.textContent = label;
                 button.addEventListener('click', async () => {
                     const { DeviceToolsModal } = await import('./DeviceToolsModal');
-                    new DeviceToolsModal(device.udid, tool);
+                    Modal.inDevicePanel(overlaySection, () => new DeviceToolsModal(device.udid, tool));
                 });
                 cell.appendChild(button);
                 overlaySection.appendChild(cell);
             }
         }
 
-        tbody.appendChild(row);
+        const workspace = document.createElement('div');
+        workspace.className = 'device-workspace';
+        const panel = document.createElement('section');
+        panel.className = 'device-detail-panel';
+        workspace.append(row, panel);
+        tbody.appendChild(workspace);
 
         // Populate the connect link. The stream itself goes to this server
         // (StreamClientScrcpy.buildStreamUrl), whatever interfaces the device
@@ -485,7 +497,10 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
                 player.setVideoSettings(videoSettings, fitToScreen, false);
 
                 const { ConnectModal } = await import('./ConnectModal');
-                new ConnectModal(params, player, fitToScreen, videoSettings, label, device.deviceKind);
+                Modal.inDevicePanel(
+                    overlaySection,
+                    () => new ConnectModal(params, player, fitToScreen, videoSettings, label, device.deviceKind),
+                );
             });
         });
     }
@@ -496,6 +511,11 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
      * replacing the previous per-row GET /api/devices/labels storm. A failed
      * fetch resolves to an empty map (rows render "Unnamed Device").
      */
+    protected override transferRowState(previous: Element, next: Element): void {
+        const panel = previous.querySelector('.device-detail-panel');
+        if (panel) next.querySelector('.device-detail-panel')?.replaceWith(panel);
+    }
+
     protected override async fetchRowContext(): Promise<Record<string, string>> {
         try {
             const res = await fetch('/api/devices/labels');

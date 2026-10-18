@@ -317,3 +317,39 @@ describe('Modal closes once', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('device side panels', () => {
+    it('mounts in the device workspace without a modal backdrop and cleans up when the device disappears', async () => {
+        const workspace = document.createElement('div');
+        workspace.className = 'device-workspace';
+        const source = document.createElement('button');
+        const panel = document.createElement('section');
+        panel.className = 'device-detail-panel';
+        workspace.append(source, panel);
+        document.body.append(workspace);
+        const closed = vi.fn();
+        Modal.inDevicePanel(source, () => new TestModal({ title: 'Device tool', onClose: closed }));
+        expect(panel.querySelector('dialog')?.hasAttribute('open')).toBe(true);
+        expect(HTMLDialogElement.prototype.showModal).not.toHaveBeenCalled();
+        workspace.remove();
+        await Promise.resolve();
+        expect(closed).toHaveBeenCalledOnce();
+    });
+    it('does not open a replacement when the current tool refuses to close', () => {
+        class Busy extends TestModal {
+            override close(): void {}
+        }
+        const workspace = document.createElement('div');
+        workspace.className = 'device-workspace';
+        const source = document.createElement('button');
+        const panel = document.createElement('section');
+        panel.className = 'device-detail-panel';
+        workspace.append(source, panel);
+        document.body.append(workspace);
+        Modal.inDevicePanel(source, () => new Busy({ title: 'Busy' }));
+        const open = vi.fn();
+        Modal.inDevicePanel(source, open);
+        expect(open).not.toHaveBeenCalled();
+        workspace.remove();
+    });
+});

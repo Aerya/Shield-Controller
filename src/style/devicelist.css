@@ -409,17 +409,136 @@ a.link-stream .kind-icon {
 /* All device actions share the same geometry, including links and late stream links. */
 #devices .device-list div.device .services {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: none; grid-auto-flow: row; gap: 8px; padding: 10px;
+    grid-template-rows: none;
+    grid-auto-flow: row;
+    gap: 8px;
+    padding: 10px;
 }
 #devices .device-list div.device .services > .desc-block {
-    padding: 0; height: auto; min-height: 40px; border: 0;
+    padding: 0;
+    height: auto;
+    min-height: 40px;
+    border: 0;
 }
 #devices .device-list div.device .services > .desc-block > :is(a, button) {
-    display: flex; align-items: center; justify-content: center;
-    width: 100%; min-height: 40px; box-sizing: border-box; padding: 8px; margin: 0;
-    border: 1px solid var(--accent-color); border-radius: 6px;
-    background: transparent; color: var(--accent-color); font: inherit; font-size: 12px;
-    text-align: center; text-decoration: none; cursor: pointer; white-space: normal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 8px;
+    margin: 0;
+    border: 1px solid var(--accent-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent-color);
+    font: inherit;
+    font-size: 12px;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: normal;
 }
-#devices .device-list div.device .services > .desc-block > :is(a, button):hover { background: var(--device-list-hover-color); }
-#devices .device-list div.device .services > .desc-block > :is(a, button):focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+#devices .device-list div.device .services > .desc-block > :is(a, button):hover {
+    background: var(--device-list-hover-color);
+}
+#devices .device-list div.device .services > .desc-block > :is(a, button):focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+#devices .device-list .device-workspace {
+    display: grid;
+    grid-template-columns: minmax(300px, 370px) minmax(0, 1fr);
+    gap: 16px;
+    width: 100%;
+    align-items: start;
+}
+#devices .device-workspace > .device {
+    min-width: 0;
+    width: auto;
+    box-sizing: border-box;
+}
+.device-detail-panel {
+    min-width: 0;
+}
+.device-detail-panel:empty {
+    min-height: 350px;
+}
+.device-detail-panel .device-panel-dialog {
+    position: static;
+    display: block;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    overflow: visible;
+    opacity: 1;
+    transform: none;
+}
+.device-detail-panel .device-panel-dialog:not([open]) {
+    display: none;
+}
+.device-panel-dialog .modal-frame {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    box-sizing: border-box;
+    opacity: 1;
+    transform: none;
+}
+.device-panel-dialog .modal-body {
+    max-height: 75vh;
+    overflow: auto;
+}
+@media (max-width: 850px) {
+    #devices .device-list .device-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .device-detail-panel:empty {
+        display: none;
+    }
+}
+
+#devices .device-detail-panel dialog.modal.device-panel-dialog {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    opacity: 1;
+    transform: none;
+    transition: none;
+}
+#devices .device-detail-panel dialog.modal.device-panel-dialog .modal-frame {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    opacity: 1;
+    transform: none;
+    transition: none;
+}
+#devices .device-panel-dialog .modal-header {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+#devices .device-panel-dialog .modal-title {
+    min-width: 0;
+    flex: 1 1 180px;
+    overflow-wrap: anywhere;
+}
+#devices .device-panel-dialog .modal-header-controls {
+    flex-shrink: 0;
+}
+#devices .device-panel-dialog .manager-info {
+    grid-template-columns: minmax(100px, 1fr) minmax(0, 3fr);
+}
+#devices .device-panel-dialog .modal-body {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}

@@ -15,8 +15,11 @@ const excluded =
 
 export function t(source: string): string {
     if (language !== 'fr') return source;
+    if (/^\d.*GiB/.test(source)) return source.replaceAll('GiB', 'Gio');
     if (dictionary[source]) return dictionary[source]!;
     const trimmed = source.trim();
+    if (source.startsWith('this address is not a secure origin'))
+        return 'Le navigateur bloque le décodeur vidéo sur cette adresse HTTP. Utilisez « Voir / Piloter » pour l’aperçu et la télécommande sur le LAN. Le flux vidéo continu nécessite un contexte sécurisé du navigateur.';
     if (dictionary[trimmed]) return source.replace(trimmed, dictionary[trimmed]!);
     const match = normalized.get(trimmed.replace(/\s+/g, ' ').toLowerCase());
     if (match) return source.replace(trimmed, match);
@@ -114,23 +117,42 @@ export function initLanguage(): void {
     window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
 }
 
-export function createLanguageToggle(inline = false): HTMLButtonElement {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = inline ? 'language-toggle language-toggle-inline' : 'language-toggle';
-    button.dataset['i18nSkip'] = '';
+export function createLanguageToggle(inline = false): HTMLElement {
+    const group = document.createElement('div');
+    group.className = inline ? 'language-toggle language-toggle-inline' : 'language-toggle';
+    group.dataset['i18nSkip'] = '';
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', 'Language / Langue');
+    const choices: HTMLButtonElement[] = [];
+    for (const [value, flag, name] of [
+        ['fr', '🇫🇷', 'Français'],
+        ['en', '🇬🇧', 'English'],
+    ] as const) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = flag;
+        button.title = name;
+        button.setAttribute('aria-label', name);
+        button.dataset['language'] = value;
+        button.addEventListener('click', () => setLanguage(value));
+        choices.push(button);
+        group.append(button);
+    }
     const update = (): void => {
-        button.textContent = language.toUpperCase();
-        button.setAttribute('aria-label', language === 'fr' ? 'Switch to English' : 'Passer en français');
-        button.title = language === 'fr' ? 'Switch to English' : 'Passer en français';
+        choices.forEach((button) => {
+            button.setAttribute('aria-pressed', String(button.dataset['language'] === language));
+        });
     };
     update();
     listeners.add(update);
-    button.addEventListener('click', () => setLanguage(language === 'fr' ? 'en' : 'fr'));
-    // Modal buttons are short lived: release their listener when the dialog closes.
-    if (inline)
-        queueMicrotask(() =>
-            button.closest('dialog')?.addEventListener('close', () => listeners.delete(update), { once: true }),
-        );
-    return button;
+    const observer = new MutationObserver(() => {
+        if (!group.isConnected) {
+            listeners.delete(update);
+            observer.disconnect();
+        }
+    });
+    queueMicrotask(() => {
+        if (group.isConnected) observer.observe(document.body, { childList: true, subtree: true });
+    });
+    return group;
 }

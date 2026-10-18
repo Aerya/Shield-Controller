@@ -8,6 +8,7 @@ import { pipeline } from 'stream/promises';
 import { AdbClient, parseGetProp } from '../AdbClient';
 import { requireOperator } from '../auth/requireOperator';
 import { Config } from '../Config';
+import { DeviceInternet } from '../DeviceInternet';
 import { cpuUsage, diskUsage, temperatures } from '../DeviceMetrics';
 import { DeviceNetwork, DnsInputError } from '../DeviceNetwork';
 import { isValidSerial, shArg } from '../security/deviceInput';
@@ -53,6 +54,7 @@ function reply(res: ServerResponse, status: number, body: unknown): void {
 
 export class DeviceManagerApi {
     private readonly busy = new Set<string>();
+    private readonly internetBusy = new Set<string>();
     private readonly dnsBusy = new Set<string>();
     constructor(private readonly adb = new AdbClient(Config.getInstance().adbPath)) {}
 
@@ -79,6 +81,17 @@ export class DeviceManagerApi {
                     'Content-Length': png.length,
                 });
                 res.end(png);
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/internet') {
+                if (this.internetBusy.has(serial)) {
+                    reply(res, 409, { error: 'An external network test is already running.' });
+                    return true;
+                }
+                this.internetBusy.add(serial);
+                try {
+                    reply(res, 200, await new DeviceInternet(this.adb).detect(serial));
+                } finally {
+                    this.internetBusy.delete(serial);
+                }
             } else if (req.method === 'GET' && url.pathname === '/api/manager/dns') {
                 reply(res, 200, await new DeviceNetwork(this.adb).status(serial));
             } else if (req.method === 'POST' && url.pathname === '/api/manager/dns-test') {
@@ -113,7 +126,12 @@ export class DeviceManagerApi {
                     thermal: 'dumpsys thermalservice',
                     launcher:
                         'cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME',
-                    foreground: 'dumpsys window windows | grep -E "mCurrentFocus|mFocusedApp"',
+                    foreground:
+                        '(dumpsys activity activities; dumpsys window windows; dumpsys activity top) | grep -E "mResumedActivity|topResumedActivity|mCurrentFocus|mFocusedApp|^ACTIVITY" | head -10',
+                    launchers:
+                        'cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME',
+                    projectivy: 'pm path com.spocky.projengmenu',
+                    accessibility: 'settings get secure enabled_accessibility_services',
                 };
                 const entries = await Promise.all(
                     Object.entries(commands).map(async ([key, command]) => {
@@ -134,6 +152,8 @@ export class DeviceManagerApi {
                         temperatures: temperatures(data['thermal'] ?? ''),
                         disks: diskUsage(data['storage'] ?? ''),
                         launcher: /([a-zA-Z][\w.]+\/[\w.$]+)/.exec(data['launcher'] ?? '')?.[1] ?? null,
+                        projectivyInstalled: (data['projectivy'] ?? '').startsWith('package:'),
+                        projectivyAccessibility: (data['accessibility'] ?? '').includes('com.spocky.projengmenu/'),
                         foreground: /([a-zA-Z][\w.]+\/[\w.$]+)/.exec(data['foreground'] ?? '')?.[1] ?? null,
                     },
                 });

@@ -65,6 +65,7 @@ describe('device management HTTP API', () => {
             ['dns', 'GET'],
             ['dns', 'POST'],
             ['dns-test', 'POST'],
+            ['internet', 'POST'],
             ['info', 'GET'],
             ['apps', 'GET'],
             ['install', 'POST'],

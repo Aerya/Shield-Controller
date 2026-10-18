@@ -22,42 +22,13 @@ describe('insecureOriginNotice', () => {
         ).toBeNull();
     });
 
-    it('explains the cause and both remedies on an insecure origin', () => {
+    it('explains the decoder limit and points at the LAN-compatible remote panel', () => {
         const notice = insecureOriginNotice(lan);
-        expect(notice).not.toBeNull();
-        // The cause, in the user's terms — not "WebCodecs is undefined".
-        expect(notice).toContain('secure');
-        // Remedy 1: open it on the serving machine, with the exact URL.
-        expect(notice).toContain('http://localhost:8000');
-        // Remedy 2: put it behind a trusted origin.
-        expect(notice?.toLowerCase()).toContain('https');
-    });
-
-    it('is lowercase, matching the app motif', () => {
-        const notice = insecureOriginNotice(lan);
-        // Device labels and model strings are the documented exceptions; this
-        // string contains neither, so it should carry no capitals at all.
-        expect(notice).toBe(notice?.toLowerCase());
-    });
-
-    // I4 (final review): this is the feature's only discovery path -- a LAN
-    // user hitting this exact message previously got no mention of Local
-    // HTTPS at all, only the loopback workaround and a generic reverse-proxy
-    // pointer. Paired in one test (null when secure, present when not) so
-    // deleting the new guidance and leaving the secure-context branch intact
-    // still fails it -- a split across two `it()`s could each pass on its
-    // own with the addition missing entirely.
-    it('points at the Local HTTPS panel as the quick fix, only when the origin is insecure', () => {
-        expect(insecureOriginNotice(secure)).toBeNull();
-        const notice = insecureOriginNotice(lan);
-        expect(notice).toMatch(/local https/i);
-        // Local HTTPS is its own Settings tab since 0.5.3, no longer a
-        // section of the Server tab, so the pointer names the tab directly.
-        expect(notice).toContain('settings → local https');
-        expect(notice).not.toMatch(/server →/i);
-        // The reverse-proxy remedy stays -- Local HTTPS is the quick fix for
-        // a home LAN, not a replacement for a real deployment.
-        expect(notice?.toLowerCase()).toContain('https from a trusted origin');
+        expect(notice).toContain('browser video decoder');
+        expect(notice).toContain('view / control');
+        expect(notice).toContain('continuous video requires a secure browser context');
+        expect(notice).not.toContain('localhost');
+        expect(notice).not.toContain('settings → local https');
     });
 });
 

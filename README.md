@@ -16,7 +16,7 @@ Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Dock
 - Application list with search, user/system/disabled filters and uninstall confirmation.
 - Remembered devices reconnect automatically at startup.
 - File browser, transfers and ADB terminal inherited from ws-scrcpy-web.
-- French/English interface with a remembered language choice and consistent action buttons.
+- French/English flag buttons and device tools in a side panel.
 - PNG screenshots with preview and download, including over LAN HTTP.
 - IPv4/IPv6 DNS: view servers, test a domain and configure Android Private DNS.
 
@@ -52,6 +52,10 @@ Build locally: `docker build -t shield-controller:local .`
 
 Ethernet and Wi-Fi both work. No router port forwarding is needed.
 
+## Remote control and text
+
+Open **View / Control**, select the TV input field with the remote, paste your URL/username in the text box, then click **Paste on Shield**. If the app blocks pasting, try **Type text directly** (300 bytes maximum; non-Latin characters are limited). Shield Controller does not store the text; pasting uses Android’s clipboard. The HTTP preview updates about every 1.5 seconds plus capture time, without audio.
+
 ## Notes
 
 Single `.apk` files only, up to **512 MiB each**; split bundles (`.apks`, `.xapk`) are unsupported. Installs update existing apps when Android permits it. Uninstall targets **Android user 0**; removing system apps can break TV functions. App names are shown as package identifiers. Some device details may be unavailable without root. Protected video may appear black in screen mirroring.
@@ -59,6 +63,8 @@ Single `.apk` files only, up to **512 MiB each**; split bundles (`.apks`, `.xapk
 ## DNS
 
 Without a custom server, the test runs on the Shield. With an IPv4/IPv6 DNS address, it runs from the Shield Controller server. Private DNS uses a **provider hostname** (DNS-over-TLS). On an unrooted Android 11 Shield, change Ethernet DNS in the TV network settings or DHCP.
+
+**Detect public IP and DNS resolvers** queries [IPleak.net](https://ipleak.net/) from the Shield. It reports observed recursive resolvers, without reading AdGuard Home or listing root servers. Per-app VPN routing may differ.
 
 ## Credits & license
 

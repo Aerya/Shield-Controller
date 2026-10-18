@@ -43,9 +43,9 @@ it('remembers the choice and offers an accessible language switch', () => {
     const button = createLanguageToggle();
     document.body.append(button);
     expect(document.documentElement.lang).toBe('fr');
-    expect(button.textContent).toBe('FR');
-    button.click();
-    expect(button.textContent).toBe('EN');
+    expect(button.querySelector('[data-language=fr]')?.getAttribute('aria-pressed')).toBe('true');
+    (button.querySelector('[data-language=en]') as HTMLButtonElement).click();
+    expect(button.querySelector('[data-language=en]')?.getAttribute('aria-pressed')).toBe('true');
     expect(localStorage.getItem('shield-controller-language')).toBe('en');
     window.dispatchEvent(new Event('pagehide'));
 });

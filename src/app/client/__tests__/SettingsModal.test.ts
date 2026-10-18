@@ -852,26 +852,24 @@ describe('the running version in the dialog footer', () => {
         expect(version!.textContent).not.toContain('undefined');
     });
 
-    it('still names the version in a container, where the Updates tab is replaced by a note', async () => {
+    it('still names the version in a container, where Docker-only tabs are removed', async () => {
         stubConfig({ ...base, docker: true, appVersion: '0.5.1' });
         new SettingsModal();
         await flush();
 
-        expect(document.querySelector('[data-docker-note="updates"]')).not.toBeNull();
+        expect(document.querySelector('[data-docker-note="updates"]')).toBeNull();
         const { version } = footerParts();
         expect(version!.hidden).toBe(false);
         expect(version!.textContent).toBe('v0.5.1');
     });
 
-    it('in a container the Local HTTPS tab shows only the reverse-proxy note and never reads /api/tls/*', async () => {
+    it('in a container Local HTTPS is absent and never reads /api/tls/*', async () => {
         stubConfig({ ...base, docker: true, appVersion: '0.5.3' });
         new SettingsModal();
         await flush();
 
         const tab = document.querySelector<HTMLElement>('dialog.settings-modal [data-settings-tab="local-https"]');
-        expect(tab).not.toBeNull();
-        expect(tab!.querySelector('[data-local-https-container-note]')).not.toBeNull();
-        expect(tab!.querySelector('[data-tls-subject]')).toBeNull();
+        expect(tab).toBeNull();
         const urls = vi.mocked(fetch).mock.calls.map(([url]) => String(url));
         expect(urls.filter((u) => u.startsWith('/api/tls/'))).toEqual([]);
     });
@@ -881,10 +879,8 @@ describe('the running version in the dialog footer', () => {
         new SettingsModal();
         await flush();
 
-        const note = document.querySelector<HTMLElement>('dialog.settings-modal [data-embed-https-note]');
-        expect(note).not.toBeNull();
-        expect(note!.textContent).toMatch(/serve this app over https from your reverse proxy first\.$/);
-        expect(note!.textContent).not.toContain('local https');
+        expect(document.querySelector('[data-settings-tab="embedding"]')).toBeNull();
+        expect(document.querySelector('[data-embed-https-note]')).toBeNull();
     });
 
     it("on a host the Embedding tab's https note offers local https or a reverse proxy", async () => {

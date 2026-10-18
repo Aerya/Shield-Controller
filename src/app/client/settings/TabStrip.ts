@@ -106,6 +106,17 @@ export class TabStrip {
         }
     }
 
+    removeTab(id: string): void {
+        const index = this.tabs.findIndex((tab) => tab.id === id);
+        if (index < 0) return;
+        this.tabs.splice(index, 1);
+        this.buttons.get(id)?.remove();
+        this.buttons.delete(id);
+        this.built.get(id)?.remove();
+        this.built.delete(id);
+        if (this.active === id && this.tabs[0]) this.activate(this.tabs[0].id);
+    }
+
     /**
      * Swap a tab's body, preserving its visibility state and the cache.
      *

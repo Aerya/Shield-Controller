@@ -2,6 +2,11 @@
 
 ## 2026-10-18
 
+- Side panels, FR/EN flags, readable storage and launcher names.
+- HTTP preview before capture, remote control and scrcpy text/Unicode clipboard input.
+- Public IPv4/IPv6 and observed DNS resolvers through IPleak tests run on the Shield.
+- Removed irrelevant Docker settings tabs and clarified the HTTP video notice.
+
 - CPU/RAM/disk monitoring, Android thermal sensors and default launcher/foreground application.
 
 - Consistent device action buttons and a remembered French/English switch.

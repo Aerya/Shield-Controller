@@ -1,3 +1,4 @@
+import { RemotePreview } from './RemotePreview';
 import '../../../style/device-manager.css';
 import { t } from '../../client/Language';
 import { Modal } from '../../ui/Modal';
@@ -12,13 +13,14 @@ export class DeviceToolsModal extends Modal {
     declare private status: HTMLElement;
     private disposed = false;
     private previewUrl: string | undefined;
+    private preview: RemotePreview | undefined;
     constructor(
         private readonly serial: string,
-        tool: 'screenshot' | 'dns',
+        tool: 'screenshot' | 'dns' | 'remote',
     ) {
-        super({ title: tool === 'screenshot' ? 'Screenshot' : 'DNS / IPv4 / IPv6' });
+        super({ title: tool === 'dns' ? 'DNS / IPv4 / IPv6' : tool === 'remote' ? 'View / Control' : 'Screenshot' });
         this.frameEl.classList.add('device-manager');
-        if (tool === 'screenshot') this.screenshotPanel();
+        if (tool !== 'dns') this.preview = new RemotePreview(this.bodyEl, serial, tool === 'remote');
         else void this.dnsPanel();
     }
     protected override buildBody(container: HTMLElement): void {
@@ -29,6 +31,7 @@ export class DeviceToolsModal extends Modal {
     }
     override close(result?: unknown): void {
         this.disposed = true;
+        this.preview?.dispose();
         if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
         super.close(result);
     }
@@ -60,29 +63,6 @@ export class DeviceToolsModal extends Modal {
             }
         });
         return button;
-    }
-    private screenshotPanel(): void {
-        const image = document.createElement('img');
-        image.alt = 'Screenshot';
-        image.style.cssText = 'max-width:100%;height:auto;display:block;margin-top:12px';
-        const download = document.createElement('a');
-        download.textContent = 'Download PNG';
-        download.hidden = true;
-        this.bodyEl.append(
-            this.button('Take screenshot', async () => {
-                const blob = await (await this.request('screenshot')).blob();
-                if (this.disposed) return;
-                if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
-                this.previewUrl = URL.createObjectURL(blob);
-                image.src = this.previewUrl;
-                download.href = this.previewUrl;
-                download.download = `shield-${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
-                download.hidden = false;
-                this.status.textContent = 'Screenshot ready.';
-            }),
-            download,
-            image,
-        );
     }
     private async dnsPanel(): Promise<void> {
         const stateOutput = document.createElement('dl');
@@ -178,6 +158,28 @@ export class DeviceToolsModal extends Modal {
             results.replaceChildren(origin, output);
             this.status.textContent = '';
         });
+        const internetNote = document.createElement('p');
+        internetNote.textContent =
+            'External test (IPleak.net): queries originate on the Shield and reveal its public IPv4/IPv6 and the recursive DNS resolvers observed for this test. This does not list root servers or every upstream setting. Apps and VPNs may use different routes.';
+        const internetResult = document.createElement('pre');
+        internetResult.style.whiteSpace = 'pre-wrap';
+        const internet = this.button('Detect public IP and DNS resolvers', async () => {
+            this.status.textContent = 'Testing from Shield… This can take up to 40 seconds.';
+            const data = await (await this.request('internet', {})).json();
+            if (this.disposed) return;
+            internetResult.textContent =
+                `${data.provider} · ${data.testedAt}\n` +
+                data.results
+                    .map(
+                        (row: { family: string; address: string | null; error: string | null }) =>
+                            `${row.family}: ${row.address || row.error}`,
+                    )
+                    .join('\n') +
+                '\nDNS: ' +
+                (data.resolvers.join(', ') || '—');
+            this.status.textContent = 'Network test completed on the Shield.';
+        });
+        this.bodyEl.append(internetNote, internet, internetResult);
         this.bodyEl.append(toolbar, stateOutput, note, mode, hostname, apply, testNote, domain, server, test, results);
         try {
             show(await (await this.request('dns')).json());

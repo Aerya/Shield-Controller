@@ -136,8 +136,28 @@ export class DeviceManagerModal extends Modal {
         ]);
         const metrics = data['metrics'] ?? {};
         rows.push(['CPU usage', typeof metrics.cpuPercent === 'number' ? `${metrics.cpuPercent} %` : 'Unavailable']);
-        rows.push(['Default launcher', metrics.launcher]);
-        rows.push(['Foreground application', metrics.foreground]);
+        const friendlyApp = (component: string | null | undefined): string => {
+            if (!component) return '';
+            const pkg = component.split('/')[0];
+            const name = (
+                {
+                    'com.spocky.projengmenu': 'Projectivy Launcher',
+                    'com.google.android.tvlauncher': 'Android TV Home (Google)',
+                    'ar.tvplayer.tv': 'TiviMate',
+                } as Record<string, string>
+            )[pkg!];
+            return name ? `${name} — ${component}` : component;
+        };
+        rows.push(['Android default home', friendlyApp(metrics.launcher)]);
+        if (metrics.projectivyInstalled)
+            rows.push([
+                'Projectivy Launcher',
+                metrics.projectivyAccessibility ? 'Installed; accessibility service enabled' : 'Installed',
+            ]);
+        rows.push([
+            'Foreground application',
+            friendlyApp(metrics.foreground) || 'No focused application reported (screen asleep or Android restriction)',
+        ]);
         rows.push([
             'Temperatures',
             metrics.temperatures?.length
@@ -161,12 +181,25 @@ export class DeviceManagerModal extends Modal {
             dt.textContent = key ?? '';
             const dd = document.createElement('dd');
             dd.textContent = value || 'Unavailable';
-            if (value && value !== 'Unavailable') dd.dataset['i18nSkip'] = '';
+            if (
+                value &&
+                value !== 'Unavailable' &&
+                !/^\d.*GiB/.test(value) &&
+                ![
+                    'Installed; accessibility service enabled',
+                    'Installed',
+                    'No focused application reported (screen asleep or Android restriction)',
+                ].includes(value)
+            )
+                dd.dataset['i18nSkip'] = '';
             table.append(dt, dd);
         }
         this.content.append(table);
+        const launcherNote = document.createElement('p');
+        launcherNote.textContent =
+            'Android default home is the system declaration. Projectivy can override the Home button through accessibility without changing it. Foreground application means the app currently receiving input; Android may report none when the screen sleeps.';
+        this.content.append(launcherNote);
         for (const [key, title] of [
-            ['storage', 'Storage (KiB)'],
             ['network', 'Network addresses'],
             ['display', 'Display'],
             ['cpu', 'CPU details'],

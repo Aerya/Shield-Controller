@@ -104,3 +104,26 @@ dialog.modal .modal-frame.device-manager {
     box-sizing: border-box;
     min-height: 0;
 }
+
+.remote-pad {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    max-width: 360px;
+    margin: 12px auto;
+}
+.remote-preview textarea {
+    width: 100%;
+    min-height: 90px;
+    box-sizing: border-box;
+    font: inherit;
+    background: var(--main-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--device-border-color);
+    border-radius: 6px;
+    padding: 10px;
+}
+.remote-preview button,
+.remote-preview a {
+    margin: 4px;
+}

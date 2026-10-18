@@ -617,18 +617,71 @@
 .app-footer {
     padding: 20px 12px;
     text-align: center;
-    font: 12px/1.9 system-ui, sans-serif;
+    font:
+        12px / 1.9 system-ui,
+        sans-serif;
     color: var(--text-color-light);
     overflow-wrap: anywhere;
 }
-.app-footer a { color: inherit; text-decoration: none; }
-.app-footer a:hover { color: var(--accent-color); text-decoration: underline; }
-.app-footer a:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
+.app-footer a {
+    color: inherit;
+    text-decoration: none;
+}
+.app-footer a:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+.app-footer a:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+}
 
 .language-toggle {
-    position: fixed; top: 12px; right: 100px; z-index: 100;
-    height: 36px; min-width: 48px; border: 1px solid var(--device-border-color);
-    border-radius: 18px; background: var(--device-list-default-color); color: var(--text-color); cursor: pointer;
+    position: fixed;
+    top: 12px;
+    right: 100px;
+    z-index: 100;
+    height: 36px;
+    min-width: 48px;
+    border: 1px solid var(--device-border-color);
+    border-radius: 18px;
+    background: var(--device-list-default-color);
+    color: var(--text-color);
+    cursor: pointer;
 }
-.language-toggle-inline { position: static; height: 30px; min-width: 42px; }
-.top-bar-indicators { right: 160px; }
+.language-toggle-inline {
+    position: static;
+    height: 30px;
+    min-width: 42px;
+}
+.top-bar-indicators {
+    right: 160px;
+}
+
+.language-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 84px;
+}
+.language-toggle button {
+    background: transparent;
+    color: inherit;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 3px;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+}
+.language-toggle button[aria-pressed="true"] {
+    border-color: var(--accent-color);
+    background: var(--device-list-hover-color);
+}
+.language-toggle button:focus-visible {
+    outline: 2px solid var(--accent-color);
+}
+.top-bar-indicators {
+    right: 196px;
+}

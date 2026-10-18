@@ -749,7 +749,7 @@ export class SettingsModal extends Modal {
                     // anywhere else it would be refused whatever the policy. An
                     // unknown caller (a failed probe) reads, the fail-open
                     // direction, as the tab did before the hold.
-                    if (this.embeddingTabEl) {
+                    if (this.embeddingTabEl && !runtime?.docker) {
                         if (this.adminReachable && runtime?.callerIsLocal !== false) {
                             void refreshEmbedding(this.embeddingTabEl);
                         } else {
@@ -1221,6 +1221,8 @@ export class SettingsModal extends Modal {
         this.tabStrip?.replaceTabBody('updates', buildDockerUpdatesNote());
         this.tabStrip?.replaceTabBody('service', buildDockerServiceNote());
         this.tabStrip?.replaceTabBody('dependencies', buildDockerDependenciesNote());
+        for (const id of ['embedding', 'updates', 'dependencies', 'service', 'local-https'])
+            this.tabStrip?.removeTab(id);
         this.updatesTabEl = null;
         this.dependenciesTabEl = null;
     }

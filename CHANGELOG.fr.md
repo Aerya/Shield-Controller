@@ -2,6 +2,11 @@
 
 ## 2026-10-18
 
+- Panneaux latéraux, drapeaux FR/EN, stockage en Gio et noms de launchers lisibles.
+- Aperçu HTTP avant capture, télécommande et saisie/collage Unicode via scrcpy.
+- IP publiques IPv4/IPv6 et résolveurs DNS observés : tests IPleak exécutés sur la Shield.
+- Retrait des onglets inutiles dans Docker et clarification du message vidéo HTTP.
+
 - Suivi CPU/RAM/stockage, sondes thermiques Android et launcher par défaut/application au premier plan.
 
 - Boutons d’action uniformisés et choix FR/EN mémorisé.

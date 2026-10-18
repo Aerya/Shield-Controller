@@ -14,6 +14,23 @@ export interface ModalOptions {
 }
 
 export abstract class Modal {
+    private static panelTarget: HTMLElement | null = null;
+    private static readonly panels = new WeakMap<HTMLElement, Modal>();
+    public static inDevicePanel<T>(source: Element, open: () => T): T | undefined {
+        const host = source.closest('.device-workspace')?.querySelector<HTMLElement>('.device-detail-panel');
+        if (!host) return open();
+        const previous = Modal.panels.get(host);
+        previous?.close();
+        if (previous && !previous.closed) return undefined;
+        const before = Modal.panelTarget;
+        Modal.panelTarget = host;
+        try {
+            return open();
+        } finally {
+            Modal.panelTarget = before;
+        }
+    }
+
     /** The parent whose `openChild` is running; every modal built meanwhile becomes its child. */
     private static openingParent: Modal | null = null;
     /** Child dialogs opened through `openChild` that are still up; closed when this one closes. */
@@ -110,8 +127,24 @@ export abstract class Modal {
         });
 
         // Show
-        document.body.appendChild(this.dialog);
-        this.dialog.showModal();
+        const host = Modal.panelTarget;
+        if (host) {
+            this.dialog.classList.add('device-panel-dialog');
+            this.dialog.setAttribute('open', '');
+            this.dialog.setAttribute('aria-label', options.title);
+            host.appendChild(this.dialog);
+            Modal.panels.set(host, this);
+            const observer = new MutationObserver(() => {
+                if (!host.isConnected || this.closed) {
+                    observer.disconnect();
+                    if (!this.closed) this.close();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        } else {
+            document.body.appendChild(this.dialog);
+            this.dialog.showModal();
+        }
     }
 
     /** Required. Subclass fills the modal body content. */
