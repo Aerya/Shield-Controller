@@ -10,7 +10,7 @@ Gérez votre **NVIDIA Shield / Android TV** depuis un navigateur. Auto-hébergé
 
 ## Fonctions
 
-- Écran en direct et télécommande : pavé directionnel, clavier et souris.
+- Aperçu de l’écran et télécommande : pavé directionnel, clavier et saisie de texte.
 - Informations détaillées : Android, matériel, RAM, stockage, réseau et affichage.
 - Installation d’APK par glisser-déposer, progression du transfert et erreurs Android.
 - Liste des applications avec recherche, filtres utilisateur/système/désactivées et confirmation de désinstallation.
@@ -18,9 +18,8 @@ Gérez votre **NVIDIA Shield / Android TV** depuis un navigateur. Auto-hébergé
 - Explorateur de fichiers, transferts et terminal ADB hérités de ws-scrcpy-web.
 - Interface FR/EN par drapeaux, panneaux d’outils à droite de l’appareil.
 - Captures d’écran PNG avec aperçu et téléchargement, y compris en HTTP sur le LAN.
-- DNS IPv4/IPv6 : affichage, test d’un domaine et configuration du DNS privé Android.
-
-- Suivi CPU, RAM, stockage, températures disponibles et launcher dans les informations (actualisation facultative toutes les 5 secondes).
+- Détection automatique des IP publiques et DNS IPv4/IPv6 avec nom du fournisseur, test d’un domaine et DNS privé Android.
+- Suivi CPU, RAM, stockage, températures disponibles, accueil déclaré par Android et application au premier plan (actualisation facultative toutes les 5 secondes).
 
 ## Docker
 
@@ -39,7 +38,7 @@ services:
       - ./data:/data
 ```
 
-Ouvrez **http://IP_DU_SERVEUR:8123** sur votre LAN. **Voir / Piloter** fonctionne en HTTP : aperçu par images actualisées, télécommande, collage et saisie de texte. Le flux vidéo continu hérité nécessite un contexte sécurisé du navigateur. La variable ci-dessus donne les droits d’administration à toute personne pouvant accéder au service ; l’authentification se configure dans Settings → Users.
+Ouvrez **http://IP_DU_SERVEUR:8123** sur votre LAN. **Voir / Piloter** fonctionne en HTTP : aperçu par images actualisées, télécommande, collage et saisie de texte. Le flux vidéo continu hérité nécessite un contexte sécurisé du navigateur. La variable ci-dessus donne les droits d’administration à toute personne pouvant accéder au service ; l’authentification se configure dans Paramètres → Utilisateurs.
 
 Compilation locale : `docker build -t shield-controller:local .`
 
@@ -48,7 +47,7 @@ Compilation locale : `docker build -t shield-controller:local .`
 1. Activez les options développeur : **Paramètres → Préférences de l’appareil → À propos → appuyez 7 fois sur Build**.
 2. Activez le **débogage réseau** et relevez l’adresse IP de la Shield.
 3. Ajoutez `IP_SHIELD:5555` dans la WebUI et acceptez l’autorisation sur la télévision.
-4. Ouvrez **device info** ou **applications / APK** sur la carte de l’appareil.
+4. Ouvrez **Informations** ou **Applications / APK** sur la carte de l’appareil.
 
 Ethernet et Wi-Fi fonctionnent. Aucune redirection de port sur la box n’est nécessaire.
 
@@ -73,7 +72,3 @@ Sans serveur personnalisé, le test s’exécute sur la Shield. Avec une IP DNS 
 Basé sur **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)**, avec des ajouts de gestion des appareils par Aerya. Le miroir d’écran utilise **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)**.
 
 **GPL-3.0-only** — voir [LICENSE](LICENSE). Les mentions de copyright d’origine sont conservées.
-
----
-
-© 2026 Aerya · [GitHub](https://github.com/Aerya/Shield-Controller) · [UpAndClear](https://upandclear.org) · [Ko-fi](https://ko-fi.com/upandclear)

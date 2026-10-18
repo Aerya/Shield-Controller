@@ -10,7 +10,7 @@ Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Dock
 
 ## Features
 
-- Live screen mirroring and remote control: D-pad, keyboard and mouse.
+- Screen preview and remote control: D-pad, keyboard and text input.
 - Detailed device information: Android, hardware, RAM, storage, network and display.
 - Drag-and-drop APK installation with upload progress and Android error messages.
 - Application list with search, user/system/disabled filters and uninstall confirmation.
@@ -18,9 +18,8 @@ Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Dock
 - File browser, transfers and ADB terminal inherited from ws-scrcpy-web.
 - French/English flag buttons and device tools in a side panel.
 - PNG screenshots with preview and download, including over LAN HTTP.
-- IPv4/IPv6 DNS: view servers, test a domain and configure Android Private DNS.
-
-- CPU, RAM, disk usage, available temperatures and launcher information (optional refresh every 5 seconds).
+- Automatic public IP and IPv4/IPv6 DNS detection with provider names, domain tests and Android Private DNS.
+- CPU, RAM, disk usage, available temperatures, Android-declared home and foreground application (optional refresh every 5 seconds).
 
 ## Docker
 
@@ -39,7 +38,7 @@ services:
       - ./data:/data
 ```
 
-Open **http://SERVER_IP:8123** on your LAN. Device information, apps and files work over HTTP. Browser screen mirroring requires a secure context (HTTPS or localhost). The variable above grants administrative access to anyone able to reach the service; sign-in is available in Settings → Users.
+Open **http://SERVER_IP:8123** on your LAN. **View / Control** works over HTTP: refreshed screen preview, remote control, pasting and text input. The inherited continuous video stream requires a secure browser context. The variable above grants administrative access to anyone able to reach the service; sign-in is available in Settings → Users.
 
 Build locally: `docker build -t shield-controller:local .`
 
@@ -73,7 +72,3 @@ Opening the DNS panel automatically detects public IPs and DNS resolvers through
 Based on **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)**, with device management additions by Aerya. Screen mirroring uses **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)**.
 
 **GPL-3.0-only** — see [LICENSE](LICENSE). Upstream copyright notices are preserved.
-
----
-
-© 2026 Aerya · [GitHub](https://github.com/Aerya/Shield-Controller) · [UpAndClear](https://upandclear.org) · [Ko-fi](https://ko-fi.com/upandclear)
