@@ -2,6 +2,8 @@
 
 ## 2026-10-18
 
+- Affiche le fournisseur des résolveurs DNS connus et identifie les autres opérateurs via RIPEstat (IPv4/IPv6), avec conservation des IP si la recherche échoue.
+
 - Corrige les panneaux invisibles : chaque encart occupe toute la grille du tracker. Régression couverte dans Chromium et Firefox, sur ordinateur et mobile.
 
 - Panneaux latéraux, drapeaux FR/EN, stockage en Gio et noms de launchers lisibles.

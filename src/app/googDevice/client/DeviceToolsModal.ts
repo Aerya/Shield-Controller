@@ -175,8 +175,13 @@ export class DeviceToolsModal extends Modal {
                             `${row.family}: ${row.address || row.error}`,
                     )
                     .join('\n') +
-                '\nDNS: ' +
-                (data.resolvers.join(', ') || '—');
+                '\nDNS:\n' +
+                (data.resolverDetails
+                    .map(
+                        (row: { address: string; provider: string | null; source: string }) =>
+                            `${row.address} — ${row.provider || t('Unknown provider')}${row.source === 'network-owner' ? ` · ${t('Network operator')}` : ''}`,
+                    )
+                    .join('\n') || '—');
             this.status.textContent = 'Network test completed on the Shield.';
         });
         this.bodyEl.append(internetNote, internet, internetResult);

@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { isIP } from 'net';
 import type { AdbClient } from './AdbClient';
+import { identifyResolvers } from './ResolverIdentity';
 import { shArg } from './security/deviceInput';
 
 export function parseHttpJson(output: string): Record<string, unknown> {
@@ -69,12 +70,14 @@ export class DeviceInternet {
                 return { family: `IPv${family}`, address, error, resolvers: [...resolvers] };
             }),
         );
+        const resolvers = [...new Set(results.flatMap((item) => item.resolvers))];
         return {
             origin: 'device',
             provider: 'IPleak.net',
             testedAt: new Date().toISOString(),
             results,
-            resolvers: [...new Set(results.flatMap((item) => item.resolvers))],
+            resolvers,
+            resolverDetails: await identifyResolvers(resolvers),
         };
     }
 }

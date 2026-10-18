@@ -62,6 +62,8 @@ Fichiers `.apk` simples uniquement, **512 Mio maximum chacun** ; les bundles (`.
 
 ## DNS
 
+Le nom du service DNS connu ou de l’opérateur réseau (RIPEstat) accompagne chaque IP ; une identification indisponible ne bloque pas le résultat.
+
 Sans serveur personnalisé, le test s’exécute sur la Shield. Avec une IP DNS IPv4/IPv6, il s’exécute depuis le serveur Shield Controller. Le DNS privé utilise un **nom d’hôte de fournisseur** (DNS-over-TLS). Sur la Shield Android 11 sans root, les DNS Ethernet se changent dans les paramètres réseau de la TV ou du DHCP, pas par ADB.
 
 Le bouton **Détecter les IP publiques et résolveurs DNS** interroge [IPleak.net](https://ipleak.net/) depuis la Shield. Il affiche les résolveurs récursifs observés, sans lire AdGuard Home ni lister les serveurs racine. Un VPN par application peut emprunter un autre chemin.

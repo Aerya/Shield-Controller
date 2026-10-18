@@ -2,6 +2,8 @@
 
 ## 2026-10-18
 
+- Label known DNS services and identify other resolver network operators through RIPEstat (IPv4/IPv6); keep IPs visible if metadata is unavailable.
+
 - Fix invisible device panels by spanning the full tracker grid; Chromium and Firefox desktop/mobile regression coverage.
 
 - Side panels, FR/EN flags, readable storage and launcher names.
