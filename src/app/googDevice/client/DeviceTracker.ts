@@ -382,8 +382,6 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
         });
 
         if (isActive) {
-            const management = document.createElement('div');
-            management.className = 'manager-card-actions';
             for (const [tab, text] of [
                 ['info', 'device info'],
                 ['apps', 'applications / APK'],
@@ -394,9 +392,27 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
                     const { DeviceManagerModal } = await import('./DeviceManagerModal');
                     new DeviceManagerModal(device.udid, device['ro.product.model'] || device.udid, tab);
                 });
-                management.appendChild(button);
+                const cell = document.createElement('div');
+                cell.className = 'desc-block';
+                cell.appendChild(button);
+                overlaySection.appendChild(cell);
             }
-            overlaySection.appendChild(management);
+
+        }
+
+        if (isActive) {
+            for (const [tool, label] of [['screenshot', 'Screenshot'], ['dns', 'DNS / IPv4 / IPv6']] as const) {
+                const cell = document.createElement('div');
+                cell.className = 'desc-block';
+                const button = document.createElement('button');
+                button.textContent = label;
+                button.addEventListener('click', async () => {
+                    const { DeviceToolsModal } = await import('./DeviceToolsModal');
+                    new DeviceToolsModal(device.udid, tool);
+                });
+                cell.appendChild(button);
+                overlaySection.appendChild(cell);
+            }
         }
 
         tbody.appendChild(row);

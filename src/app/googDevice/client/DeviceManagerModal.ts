@@ -1,3 +1,4 @@
+import { t } from '../../client/Language';
 import '../../../style/device-manager.css';
 import { Modal } from '../../ui/Modal';
 
@@ -14,6 +15,8 @@ export class DeviceManagerModal extends Modal {
     private apps: AppRow[] = [];
     private pending = false;
     private disposed = false;
+    private refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    private autoRefresh = false;
     private xhr: XMLHttpRequest | undefined;
     declare private status: HTMLElement;
     declare private content: HTMLElement;
@@ -52,11 +55,12 @@ export class DeviceManagerModal extends Modal {
         if (
             this.pending &&
             !window.confirm(
-                'An operation is running. Close this panel? An installation already sent to Android may continue.',
+                t('An operation is running. Close this panel? An installation already sent to Android may continue.'),
             )
         )
             return;
         this.disposed = true;
+        clearTimeout(this.refreshTimer);
         this.xhr?.abort();
         super.close(result);
     }
@@ -73,6 +77,7 @@ export class DeviceManagerModal extends Modal {
     }
 
     private async load(tab: 'info' | 'apps'): Promise<void> {
+        clearTimeout(this.refreshTimer);
         this.pending = true;
         this.status.textContent = 'Loading…';
         this.content.replaceChildren();
@@ -87,6 +92,10 @@ export class DeviceManagerModal extends Modal {
             this.showError(error);
         } finally {
             this.pending = false;
+            if (tab === 'info' && this.autoRefresh && !this.disposed)
+                this.refreshTimer = setTimeout(() => {
+                    void this.load('info');
+                }, 5000);
         }
     }
 
@@ -113,6 +122,11 @@ export class DeviceManagerModal extends Modal {
         const available = String(data['memory']).match(/MemAvailable:\s+(\d+)/);
         const seconds = Number.parseFloat(String(data['uptime']));
         rows.push(['RAM total', memory ? `${(Number(memory[1]) / 1048576).toFixed(2)} GiB` : 'Unavailable']);
+        if (memory && available)
+            rows.push([
+                'RAM used',
+                `${((Number(memory[1]) - Number(available[1])) / 1048576).toFixed(2)} GiB (${Math.round((1 - Number(available[1]) / Number(memory[1])) * 100)}%)`,
+            ]);
         rows.push(['RAM available', available ? `${(Number(available[1]) / 1048576).toFixed(2)} GiB` : 'Unavailable']);
         rows.push([
             'Uptime',
@@ -120,6 +134,26 @@ export class DeviceManagerModal extends Modal {
                 ? `${Math.floor(seconds / 86400)}d ${Math.floor(seconds / 3600) % 24}h ${Math.floor(seconds / 60) % 60}m`
                 : 'Unavailable',
         ]);
+        const metrics = data['metrics'] ?? {};
+        rows.push(['CPU usage', typeof metrics.cpuPercent === 'number' ? `${metrics.cpuPercent} %` : 'Unavailable']);
+        rows.push(['Default launcher', metrics.launcher]);
+        rows.push(['Foreground application', metrics.foreground]);
+        rows.push([
+            'Temperatures',
+            metrics.temperatures?.length
+                ? metrics.temperatures
+                      .map((item: { name: string; celsius: number }) => `${item.name}: ${item.celsius} °C`)
+                      .join(' · ')
+                : 'Unavailable',
+        ]);
+        for (const disk of metrics.disks ?? []) {
+            rows.push([
+                `Storage ${disk.mount}`,
+                `${(disk.usedKiB / 1048576).toFixed(2)} / ${(disk.totalKiB / 1048576).toFixed(2)} GiB (${disk.percent}%)`,
+            ]);
+        }
+        for (const disk of metrics.disks ?? [])
+            rows.push([`Available ${disk.mount}`, `${(disk.availableKiB / 1048576).toFixed(2)} GiB`]);
         const table = document.createElement('dl');
         table.className = 'manager-info';
         for (const [key, value] of rows) {
@@ -127,6 +161,7 @@ export class DeviceManagerModal extends Modal {
             dt.textContent = key ?? '';
             const dd = document.createElement('dd');
             dd.textContent = value || 'Unavailable';
+            if (value && value !== 'Unavailable') dd.dataset['i18nSkip'] = '';
             table.append(dt, dd);
         }
         this.content.append(table);
@@ -149,7 +184,22 @@ export class DeviceManagerModal extends Modal {
         refresh.onclick = () => {
             if (!this.pending) void this.load('info');
         };
-        this.content.append(refresh);
+        const autoLabel = document.createElement('label');
+        const auto = document.createElement('input');
+        auto.type = 'checkbox';
+        auto.checked = this.autoRefresh;
+        const caption = document.createElement('span');
+        caption.textContent = 'Auto-refresh every 5 seconds';
+        auto.onchange = () => {
+            this.autoRefresh = auto.checked;
+            clearTimeout(this.refreshTimer);
+            if (this.autoRefresh)
+                this.refreshTimer = setTimeout(() => {
+                    if (!this.disposed && !this.pending) void this.load('info');
+                }, 5000);
+        };
+        autoLabel.append(auto, caption);
+        this.content.append(refresh, autoLabel);
     }
 
     private renderApps(): void {
@@ -234,6 +284,7 @@ export class DeviceManagerModal extends Modal {
                 meta.textContent = `${app.system ? 'System' : 'User'}${app.disabled ? ' · Disabled' : ''} · Version code ${app.versionCode || 'unknown'}`;
                 const path = document.createElement('small');
                 path.textContent = app.path;
+                path.dataset['i18nSkip'] = '';
                 text.append(name, meta, path);
                 const remove = document.createElement('button');
                 remove.textContent = 'Uninstall';
@@ -242,7 +293,7 @@ export class DeviceManagerModal extends Modal {
                     const warning = app.system
                         ? '\n\nThis is a system app. Removing it for user 0 can break TV functions. Its system image remains on the device.'
                         : '';
-                    if (!window.confirm(`Uninstall ${app.packageName} for user 0?${warning}`)) return;
+                    if (!window.confirm(t(`Uninstall ${app.packageName} for user 0?${warning}`))) return;
                     this.pending = true;
                     remove.disabled = true;
                     this.status.textContent = `Uninstalling ${app.packageName}…`;

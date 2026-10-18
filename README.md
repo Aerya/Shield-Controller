@@ -16,6 +16,11 @@ Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Dock
 - Application list with search, user/system/disabled filters and uninstall confirmation.
 - Remembered devices reconnect automatically at startup.
 - File browser, transfers and ADB terminal inherited from ws-scrcpy-web.
+- French/English interface with a remembered language choice and consistent action buttons.
+- PNG screenshots with preview and download, including over LAN HTTP.
+- IPv4/IPv6 DNS: view servers, test a domain and configure Android Private DNS.
+
+- CPU, RAM, disk usage, available temperatures and launcher information (optional refresh every 5 seconds).
 
 ## Docker
 
@@ -51,8 +56,16 @@ Ethernet and Wi-Fi both work. No router port forwarding is needed.
 
 Single `.apk` files only, up to **512 MiB each**; split bundles (`.apks`, `.xapk`) are unsupported. Installs update existing apps when Android permits it. Uninstall targets **Android user 0**; removing system apps can break TV functions. App names are shown as package identifiers. Some device details may be unavailable without root. Protected video may appear black in screen mirroring.
 
+## DNS
+
+Without a custom server, the test runs on the Shield. With an IPv4/IPv6 DNS address, it runs from the Shield Controller server. Private DNS uses a **provider hostname** (DNS-over-TLS). On an unrooted Android 11 Shield, change Ethernet DNS in the TV network settings or DHCP.
+
 ## Credits & license
 
 Based on **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)**, with device management additions by Aerya. Screen mirroring uses **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)**.
 
 **GPL-3.0-only** — see [LICENSE](LICENSE). Upstream copyright notices are preserved.
+
+---
+
+© 2026 Aerya · [GitHub](https://github.com/Aerya/Shield-Controller) · [UpAndClear](https://upandclear.org) · [Ko-fi](https://ko-fi.com/upandclear)

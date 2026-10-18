@@ -27,6 +27,8 @@ describe('authState', () => {
     });
     it('allow-lists the login page + login endpoint only', () => {
         expect(isAllowlisted('/api/auth/login')).toBe(true);
+        expect(isAllowlisted('/favicon.png')).toBe(true);
+        expect(isAllowlisted('/bundle.js')).toBe(false);
         expect(isAllowlisted('/api/whoami')).toBe(true); // sibling identity probe: a second instance has no session (loopback-only handler)
         expect(isAllowlisted('/api/auth/me')).toBe(true); // login page reads authEnabled pre-login
         expect(isAllowlisted('/api/devices')).toBe(false);

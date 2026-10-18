@@ -127,3 +127,34 @@ describe('Shield Controller management panel', () => {
         );
     });
 });
+
+describe('device telemetry', () => {
+    it('renders CPU, RAM, separate storage mounts, temperatures and launcher from device readings', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                properties: {},
+                memory: 'MemTotal: 2097152 kB\nMemAvailable: 1048576 kB',
+                uptime: '3600',
+                metrics: {
+                    cpuPercent: 12.5,
+                    temperatures: [{ name: 'CPU0', celsius: 35.5 }],
+                    launcher: 'com.example.home/.Main',
+                    foreground: 'com.example.player/.Main',
+                    disks: [
+                        { mount: '/data', usedKiB: 1048576, totalKiB: 2097152, availableKiB: 1048576, percent: 50 },
+                    ],
+                },
+            }),
+        });
+        const modal = new DeviceManagerModal('device', 'Demo TV', 'info');
+        await vi.waitFor(() => expect(document.querySelector('.manager-info')?.textContent).toContain('12.5 %'));
+        const text = document.querySelector('.manager-info')!.textContent!;
+        expect(text).toContain('1.00 GiB (50%)');
+        expect(text).toContain('35.5 °C');
+        expect(text).toContain('com.example.home/.Main');
+        expect(text).toContain('com.example.player/.Main');
+        expect(text).toContain('1.00 / 2.00 GiB (50%)');
+        modal.close();
+    });
+});

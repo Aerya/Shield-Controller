@@ -8,6 +8,8 @@ import { pipeline } from 'stream/promises';
 import { AdbClient, parseGetProp } from '../AdbClient';
 import { requireOperator } from '../auth/requireOperator';
 import { Config } from '../Config';
+import { cpuUsage, diskUsage, temperatures } from '../DeviceMetrics';
+import { DeviceNetwork, DnsInputError } from '../DeviceNetwork';
 import { isValidSerial, shArg } from '../security/deviceInput';
 import { BodyTooLargeError, InvalidJsonError, readJsonBodyStrict } from './utils';
 
@@ -51,6 +53,7 @@ function reply(res: ServerResponse, status: number, body: unknown): void {
 
 export class DeviceManagerApi {
     private readonly busy = new Set<string>();
+    private readonly dnsBusy = new Set<string>();
     constructor(private readonly adb = new AdbClient(Config.getInstance().adbPath)) {}
 
     async handle(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
@@ -68,7 +71,36 @@ export class DeviceManagerApi {
                 reply(res, 409, { error: 'Device disconnected or awaiting authorization on the TV.' });
                 return true;
             }
-            if (req.method === 'GET' && url.pathname === '/api/manager/info') {
+            if (req.method === 'GET' && url.pathname === '/api/manager/screenshot') {
+                const png = await this.adb.screenshot(serial);
+                res.writeHead(200, {
+                    'Content-Type': 'image/png',
+                    'Cache-Control': 'no-store',
+                    'Content-Length': png.length,
+                });
+                res.end(png);
+            } else if (req.method === 'GET' && url.pathname === '/api/manager/dns') {
+                reply(res, 200, await new DeviceNetwork(this.adb).status(serial));
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/dns-test') {
+                const body = await readJsonBodyStrict(req);
+                reply(res, 200, await new DeviceNetwork(this.adb).test(serial, body['domain'], body['server']));
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/dns') {
+                const body = await readJsonBodyStrict(req);
+                if (this.dnsBusy.has(serial)) {
+                    reply(res, 409, { error: 'A DNS change is already running on this device.' });
+                    return true;
+                }
+                this.dnsBusy.add(serial);
+                try {
+                    reply(
+                        res,
+                        200,
+                        await new DeviceNetwork(this.adb).configure(serial, body['mode'], body['hostname']),
+                    );
+                } finally {
+                    this.dnsBusy.delete(serial);
+                }
+            } else if (req.method === 'GET' && url.pathname === '/api/manager/info') {
                 const commands = {
                     properties: 'getprop',
                     memory: 'cat /proc/meminfo',
@@ -77,6 +109,11 @@ export class DeviceManagerApi {
                     network: 'ip -o addr show',
                     display: 'wm size; wm density',
                     cpu: 'cat /proc/cpuinfo',
+                    cpuSamples: 'head -n 1 /proc/stat; sleep 1; head -n 1 /proc/stat',
+                    thermal: 'dumpsys thermalservice',
+                    launcher:
+                        'cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME',
+                    foreground: 'dumpsys window windows | grep -E "mCurrentFocus|mFocusedApp"',
                 };
                 const entries = await Promise.all(
                     Object.entries(commands).map(async ([key, command]) => {
@@ -88,7 +125,18 @@ export class DeviceManagerApi {
                     }),
                 );
                 const data = Object.fromEntries(entries);
-                reply(res, 200, { ...data, properties: parseGetProp(data['properties'] ?? ''), serial });
+                reply(res, 200, {
+                    ...data,
+                    properties: parseGetProp(data['properties'] ?? ''),
+                    serial,
+                    metrics: {
+                        cpuPercent: cpuUsage(data['cpuSamples'] ?? ''),
+                        temperatures: temperatures(data['thermal'] ?? ''),
+                        disks: diskUsage(data['storage'] ?? ''),
+                        launcher: /([a-zA-Z][\w.]+\/[\w.$]+)/.exec(data['launcher'] ?? '')?.[1] ?? null,
+                        foreground: /([a-zA-Z][\w.]+\/[\w.$]+)/.exec(data['foreground'] ?? '')?.[1] ?? null,
+                    },
+                });
             } else if (req.method === 'GET' && url.pathname === '/api/manager/apps') {
                 const [list, system, disabled] = await Promise.all([
                     this.adb.shell(serial, 'pm list packages -f --show-versioncode'),
@@ -124,7 +172,12 @@ export class DeviceManagerApi {
                 reply(res, 404, { error: 'Unknown device management endpoint.' });
             }
         } catch (error) {
-            const status = error instanceof BodyTooLargeError ? 413 : error instanceof InvalidJsonError ? 400 : 502;
+            const status =
+                error instanceof BodyTooLargeError
+                    ? 413
+                    : error instanceof InvalidJsonError || error instanceof DnsInputError
+                      ? 400
+                      : 502;
             reply(res, status, { error: error instanceof Error ? error.message : 'Device operation failed.' });
         }
         return true;

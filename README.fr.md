@@ -16,6 +16,11 @@ Gérez votre **NVIDIA Shield / Android TV** depuis un navigateur. Auto-hébergé
 - Liste des applications avec recherche, filtres utilisateur/système/désactivées et confirmation de désinstallation.
 - Reconnexion automatique des appareils mémorisés au démarrage.
 - Explorateur de fichiers, transferts et terminal ADB hérités de ws-scrcpy-web.
+- Interface FR/EN, choix mémorisé et boutons d’action uniformes.
+- Captures d’écran PNG avec aperçu et téléchargement, y compris en HTTP sur le LAN.
+- DNS IPv4/IPv6 : affichage, test d’un domaine et configuration du DNS privé Android.
+
+- Suivi CPU, RAM, stockage, températures disponibles et launcher dans les informations (actualisation facultative toutes les 5 secondes).
 
 ## Docker
 
@@ -51,8 +56,16 @@ Ethernet et Wi-Fi fonctionnent. Aucune redirection de port sur la box n’est n�
 
 Fichiers `.apk` simples uniquement, **512 Mio maximum chacun** ; les bundles (`.apks`, `.xapk`) ne sont pas pris en charge. L’installation met à jour les applications existantes si Android l’autorise. La désinstallation concerne **l’utilisateur Android 0** ; retirer une application système peut perturber la TV. Les applications sont affichées par leur identifiant de paquet. Certaines informations nécessitent le root. Les vidéos protégées peuvent rester noires dans le miroir d’écran.
 
+## DNS
+
+Sans serveur personnalisé, le test s’exécute sur la Shield. Avec une IP DNS IPv4/IPv6, il s’exécute depuis le serveur Shield Controller. Le DNS privé utilise un **nom d’hôte de fournisseur** (DNS-over-TLS). Sur la Shield Android 11 sans root, les DNS Ethernet se changent dans les paramètres réseau de la TV ou du DHCP, pas par ADB.
+
 ## Crédits et licence
 
 Basé sur **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)**, avec des ajouts de gestion des appareils par Aerya. Le miroir d’écran utilise **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)**.
 
 **GPL-3.0-only** — voir [LICENSE](LICENSE). Les mentions de copyright d’origine sont conservées.
+
+---
+
+© 2026 Aerya · [GitHub](https://github.com/Aerya/Shield-Controller) · [UpAndClear](https://upandclear.org) · [Ko-fi](https://ko-fi.com/upandclear)

@@ -1,3 +1,4 @@
+import { createLanguageToggle } from '../client/Language';
 import '../../style/modal.css';
 import { createThemeToggle } from '../client/ThemeToggle';
 
@@ -59,6 +60,7 @@ export abstract class Modal {
         this.headerControls = document.createElement('div');
         this.headerControls.classList.add('modal-header-controls');
 
+        this.headerControls.appendChild(createLanguageToggle(true));
         const themeBtn = createThemeToggle();
         themeBtn.classList.add('modal-close'); // reuse close button sizing
         this.headerControls.appendChild(themeBtn);

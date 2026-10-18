@@ -23,6 +23,7 @@ const adb = {
         async (_serial: string, command: string): Promise<string> =>
             command === 'getprop' ? '[ro.product.model]: [SHIELD]' : '',
     ),
+    screenshot: vi.fn(async () => Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3])),
     installApk: vi.fn(async (_serial: string, _path: string) => 'Success'),
 };
 
@@ -51,9 +52,19 @@ afterEach(async () => {
 const url = (route: string, target = serial) => `${base}${route}?serial=${encodeURIComponent(target)}`;
 
 describe('device management HTTP API', () => {
+    it('delivers binary PNG captures without conversion or caching', async () => {
+        const response = await fetch(url('screenshot'));
+        expect(response.headers.get('content-type')).toBe('image/png');
+        expect(response.headers.get('cache-control')).toBe('no-store');
+        expect(Buffer.from(await response.arrayBuffer())).toEqual(await adb.screenshot());
+    });
     it('refuses every route before touching ADB when the operator gate rejects access', async () => {
         policy.allowed = false;
         for (const [route, method] of [
+            ['screenshot', 'GET'],
+            ['dns', 'GET'],
+            ['dns', 'POST'],
+            ['dns-test', 'POST'],
             ['info', 'GET'],
             ['apps', 'GET'],
             ['install', 'POST'],

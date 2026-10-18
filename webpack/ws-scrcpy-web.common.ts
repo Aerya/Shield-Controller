@@ -134,11 +134,11 @@ const front: webpack.Configuration = {
             path.resolve(PROJECT_ROOT, 'public/index.html'),
             path.resolve(CLIENT_DIST_PATH, 'index.html'),
         ),
-        // Favicon — derive it from the app icon (assets/tray-icon.png) so the
+        // Favicon — derive it from the app icon (assets/branding/shield-controller-logo.png) so the
         // browser tab shows our icon. Served from dist/public/favicon.png and
         // referenced in public/index.html's <head>.
         new CopyFilePlugin(
-            path.resolve(PROJECT_ROOT, 'assets/tray-icon.png'),
+            path.resolve(PROJECT_ROOT, 'assets/branding/shield-controller-logo.png'),
             path.resolve(CLIENT_DIST_PATH, 'favicon.png'),
         ),
         new CopyHelpDirPlugin(),

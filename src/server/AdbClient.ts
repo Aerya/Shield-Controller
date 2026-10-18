@@ -242,6 +242,22 @@ export class AdbClient {
         return output.trim();
     }
 
+    async screenshot(serial: string): Promise<Buffer> {
+        assertSerial(serial);
+        await this.daemon.ensureReady();
+        const { stdout } = await execFileAsync(this.adbPath, ['-s', serial, 'exec-out', 'screencap', '-p'], {
+            encoding: 'buffer',
+            cwd: this.cwd,
+            timeout: 15000,
+            killSignal: 'SIGKILL',
+            maxBuffer: 24 * 1024 * 1024,
+        });
+        if (!stdout.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+            throw new Error('Android did not return a PNG screenshot.');
+        }
+        return stdout;
+    }
+
     async push(serial: string, local: string, remote: string): Promise<void> {
         await this.exec(['-s', serial, 'push', local, remote]);
     }

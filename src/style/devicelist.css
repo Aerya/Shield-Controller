@@ -233,62 +233,14 @@ body.list #device_list_menu {
     cursor: not-allowed;
 }
 
-/* Modal-launch buttons — 2x2 grid filled column-first:
-   left col = [shell][list files], right col = [connect][configure stream].
-   Outer borders on left/right; border-top is the row divider shared with
-   the device-info table above. Inner cross dividers are drawn as
-   border-right / border-bottom on the cells (the .desc-block items
-   themselves stretch to fill their cell). Borders sit at element edges
-   (integer pixels) so they render crisply, unlike 1px grid-track
-   dividers which can land on sub-pixel positions and anti-alias. */
+/* Device actions use a row grid so additional tools keep the same dimensions. */
 #devices .device-list div.device .services {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    grid-auto-flow: column;
-    gap: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    gap: 8px;
     border-top: 1px solid var(--device-border-color);
-    border-left: 1px solid var(--device-border-color);
-    border-right: 1px solid var(--device-border-color);
-    padding: 0;
-}
-
-/* Each .desc-block (modal-launch cell) stretches to fill its grid cell.
-   Padding gives breathing room around the inner button (which carries
-   the blue border — moved off .desc-block so .desc-block can act as
-   the gray-bordered cell). */
-#devices .device-list div.device .services > .desc-block {
-    justify-self: stretch;
-    align-self: stretch;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 0 8px;
-    margin: 0;
-    border: none;
-    border-radius: 0;
-    overflow: visible;
-    height: 36px;
-    box-sizing: border-box;
-}
-
-/* Cross dividers via cell borders. With grid-auto-flow: column over 2
-   rows: nth-child(1)=top-left, (2)=bottom-left, (3)=top-right,
-   (4)=bottom-right. Top-left gets right + bottom; bottom-left gets
-   right; top-right gets bottom; bottom-right gets none. For inactive
-   devices (3 buttons, no `connect`), nth-child(3) is `config stream`
-   sitting at top-right with border-bottom — that's fine; the line
-   ends at the cell boundary regardless of whether anything below
-   occupies the empty bottom-right cell. */
-#devices .device-list div.device .services > .desc-block:nth-child(1) {
-    border-right: 1px solid var(--device-border-color);
-    border-bottom: 1px solid var(--device-border-color);
-}
-#devices .device-list div.device .services > .desc-block:nth-child(2) {
-    border-right: 1px solid var(--device-border-color);
-}
-#devices .device-list div.device .services > .desc-block:nth-child(3) {
-    border-bottom: 1px solid var(--device-border-color);
+    padding: 10px;
 }
 
 /* Insecure-origin notice — spans both columns beneath the modal-launch grid.
@@ -453,3 +405,21 @@ a.link-stream .kind-icon {
     height: 14px;
     vertical-align: middle;
 }
+
+/* All device actions share the same geometry, including links and late stream links. */
+#devices .device-list div.device .services {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none; grid-auto-flow: row; gap: 8px; padding: 10px;
+}
+#devices .device-list div.device .services > .desc-block {
+    padding: 0; height: auto; min-height: 40px; border: 0;
+}
+#devices .device-list div.device .services > .desc-block > :is(a, button) {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; min-height: 40px; box-sizing: border-box; padding: 8px; margin: 0;
+    border: 1px solid var(--accent-color); border-radius: 6px;
+    background: transparent; color: var(--accent-color); font: inherit; font-size: 12px;
+    text-align: center; text-decoration: none; cursor: pointer; white-space: normal;
+}
+#devices .device-list div.device .services > .desc-block > :is(a, button):hover { background: var(--device-list-hover-color); }
+#devices .device-list div.device .services > .desc-block > :is(a, button):focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }

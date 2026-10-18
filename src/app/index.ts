@@ -6,6 +6,8 @@ import '../style/first-run-banner.css';
 import '../style/home.css';
 import type { AppConfigEnvelope, FirstRunStatus } from '../common/ConfigEvents';
 import type { ServiceStatusResponse } from '../common/ServiceEvents';
+import { createAppFooter } from './client/AppFooter';
+import { createLanguageToggle, initLanguage } from './client/Language';
 import { AdminScopeBanner } from './client/AdminScopeBanner';
 import { authClient, type Role } from './client/AuthClient';
 import { adminApiReachable } from './client/adminGate';
@@ -271,6 +273,8 @@ window.onload = async (): Promise<void> => {
         });
     }
 
+    initLanguage();
+    document.body.appendChild(createLanguageToggle());
     document.body.appendChild(createSettingsHeader());
     document.body.appendChild(createThemeToggle());
 
@@ -338,6 +342,7 @@ window.onload = async (): Promise<void> => {
 
     const discoveryPanel = new NetworkDiscoveryPanel();
     pageContainer.appendChild(discoveryPanel.getElement());
+    pageContainer.appendChild(createAppFooter());
 
     // The panel itself now lives in Settings → Dependencies; what stays here is
     // an alert that appears only when something needs updating. All three of its

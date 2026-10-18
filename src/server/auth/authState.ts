@@ -31,6 +31,7 @@ export const SESSION_COOKIE = 'wsscrcpy_sid';
 // check (finding 12.12 — the gate used to return before reading the cookie, and
 // requireAdmin then treated every caller here as the implicit admin).
 const ALLOWLIST_EXACT = new Set([
+    '/favicon.png', // Public branding only; the app bundle and all device data remain gated.
     '/api/auth/login',
     '/api/auth/me',
     '/api/whoami',

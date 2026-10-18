@@ -1,0 +1,51 @@
+// @vitest-environment jsdom
+import { beforeEach, expect, it, vi } from 'vitest';
+import { createLanguageToggle, initLanguage, setLanguage } from './Language';
+
+beforeEach(() => {
+    document.body.replaceChildren();
+    localStorage.clear();
+    setLanguage('en');
+});
+it('switches existing and newly inserted text in both directions without losing actions or translating user data', async () => {
+    initLanguage();
+    const button = document.createElement('button');
+    button.textContent = 'Refresh';
+    const click = vi.fn();
+    button.onclick = click;
+    const data = document.createElement('span');
+    data.dataset['i18nSkip'] = '';
+    data.textContent = 'Refresh';
+    document.body.append(button, data);
+    setLanguage('fr');
+    expect(button.textContent).toBe('Actualiser');
+    expect(data.textContent).toBe('Refresh');
+    button.click();
+    expect(click).toHaveBeenCalledOnce();
+    const input = document.createElement('input');
+    input.placeholder = 'Username';
+    input.value = 'Refresh';
+    document.body.append(input);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(input.placeholder).toBe('Nom d’utilisateur');
+    expect(input.value).toBe('Refresh');
+    button.textContent = 'Cancel';
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(button.textContent).toBe('Annuler');
+    setLanguage('en');
+    expect(button.textContent).toBe('Cancel');
+    expect(input.placeholder).toBe('Username');
+    window.dispatchEvent(new Event('pagehide'));
+});
+it('remembers the choice and offers an accessible language switch', () => {
+    setLanguage('fr');
+    initLanguage();
+    const button = createLanguageToggle();
+    document.body.append(button);
+    expect(document.documentElement.lang).toBe('fr');
+    expect(button.textContent).toBe('FR');
+    button.click();
+    expect(button.textContent).toBe('EN');
+    expect(localStorage.getItem('shield-controller-language')).toBe('en');
+    window.dispatchEvent(new Event('pagehide'));
+});

@@ -2,6 +2,13 @@
 
 ## 2026-10-18
 
+- Suivi CPU/RAM/stockage, sondes thermiques Android et launcher par défaut/application au premier plan.
+
+- Boutons d’action uniformisés et choix FR/EN mémorisé.
+- Captures PNG avec aperçu et téléchargement.
+- Diagnostic DNS IPv4/IPv6, domaine au choix et configuration du DNS privé avec relecture et restauration en cas d’échec.
+- Logo utilisé en favicon et footer avec les liens GitHub, UpAndClear, Ko-fi et le crédit du projet d’origine.
+
 - Restaure les connexions ADB mémorisées après redémarrage.
 - Corrige la sonde Docker lorsque l’authentification est activée.
 
