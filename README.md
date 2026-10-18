@@ -14,6 +14,7 @@ Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Dock
 - Detailed device information: Android, hardware, RAM, storage, network and display.
 - Drag-and-drop APK installation with upload progress and Android error messages.
 - Application list with search, user/system/disabled filters and uninstall confirmation.
+- Remembered devices reconnect automatically at startup.
 - File browser, transfers and ADB terminal inherited from ws-scrcpy-web.
 
 ## Docker

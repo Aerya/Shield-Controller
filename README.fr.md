@@ -14,6 +14,7 @@ Gérez votre **NVIDIA Shield / Android TV** depuis un navigateur. Auto-hébergé
 - Informations détaillées : Android, matériel, RAM, stockage, réseau et affichage.
 - Installation d’APK par glisser-déposer, progression du transfert et erreurs Android.
 - Liste des applications avec recherche, filtres utilisateur/système/désactivées et confirmation de désinstallation.
+- Reconnexion automatique des appareils mémorisés au démarrage.
 - Explorateur de fichiers, transferts et terminal ADB hérités de ws-scrcpy-web.
 
 ## Docker

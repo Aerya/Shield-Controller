@@ -38,6 +38,7 @@ import { resolveMac } from './network/MacResolver';
 import { NetworkScanner } from './network/NetworkScanner';
 import { consumeSuppressBrowserMarker, openBrowser, shouldAutoOpenBrowser } from './openBrowser';
 import { reconcileWebPort } from './reconcileWebPort';
+import { reconnectKnownDevices } from './reconnectKnownDevices';
 import { ScrcpyConnection } from './ScrcpyConnection';
 import { setFrameAncestors } from './security/frameGuard';
 import { setAllowedHosts } from './security/originGuard';
@@ -390,6 +391,11 @@ if (__ssArgs) {
             depManager
                 .checkAll({ boot: true })
                 .then(() => depManager.autoInstallMissing())
+                .then(() => reconnectKnownDevices(scanAdb, config.db.devices.listDevices()))
+                .then(({ restored, failed }) => {
+                    if (restored || failed)
+                        Logger.for('Server').info(`Remembered devices: ${restored} restored, ${failed} unavailable`);
+                })
                 .catch((err: Error) =>
                     Logger.for('DependencyManager').error('Initial check/install failed:', err.message),
                 );

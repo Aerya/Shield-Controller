@@ -2,6 +2,9 @@
 
 ## 2026-10-18
 
+- Restore remembered ADB connections after a server restart.
+- Fix Docker health checks when sign-in is enabled.
+
 - Added detailed device information.
 - Added drag-and-drop APK installation with upload progress.
 - Added application search, filters and uninstall confirmation.

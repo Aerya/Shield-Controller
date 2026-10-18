@@ -2,6 +2,9 @@
 
 ## 2026-10-18
 
+- Restaure les connexions ADB mémorisées après redémarrage.
+- Corrige la sonde Docker lorsque l’authentification est activée.
+
 - Ajout des informations détaillées sur l’appareil.
 - Installation d’APK par glisser-déposer avec suivi du transfert.
 - Gestion des applications : recherche, filtres et désinstallation avec confirmation.
