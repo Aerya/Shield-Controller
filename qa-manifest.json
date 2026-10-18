@@ -8,15 +8,31 @@
         "repository": "bilbospocketses/ws-scrcpy-web"
     },
     "suites": [
-        { "name": "fast", "command": "npm run test:e2e", "services": [] },
-        { "name": "docker", "command": "npm run test:e2e:docker", "services": [] },
-        { "name": "device", "command": "npm run test:e2e:device", "services": ["android-emulator"] }
+        {
+            "name": "fast",
+            "command": "npm run test:e2e",
+            "services": []
+        },
+        {
+            "name": "docker",
+            "command": "npm run test:e2e:docker",
+            "services": []
+        },
+        {
+            "name": "device",
+            "command": "npm run test:e2e:device",
+            "services": [
+                "android-emulator"
+            ]
+        }
     ],
     "suiteMap": {
         "fast": "tests/e2e"
     },
     "runner": {
-        "playwrightVersion": "1.64.0",
-        "browsers": ["chromium"]
+        "playwrightVersion": "1.64.1",
+        "browsers": [
+            "chromium"
+        ]
     }
 }
