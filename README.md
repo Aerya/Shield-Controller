@@ -21,6 +21,15 @@ Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Dock
 - Automatic public IP and IPv4/IPv6 DNS detection with provider names, domain tests and Android Private DNS.
 - CPU, RAM, disk usage, available temperatures, Android-declared home and foreground application (optional refresh every 5 seconds).
 
+## Screenshots
+
+| | |
+| --- | --- |
+| **Remote control and text pasting**<br>[![Remote control and text pasting](assets/screenshots/remote-control.png)](assets/screenshots/remote-control.png) | **Overview and network discovery**<br>[![Overview and network discovery](assets/screenshots/overview.png)](assets/screenshots/overview.png) |
+| **ADB terminal**<br>[![ADB terminal](assets/screenshots/terminal.png)](assets/screenshots/terminal.png) | **File browser**<br>[![File browser](assets/screenshots/files.png)](assets/screenshots/files.png) |
+| **Public IPs and IPv4/IPv6 DNS**<br>[![Public IPs and IPv4/IPv6 DNS](assets/screenshots/dns.png)](assets/screenshots/dns.png) | **Applications and APK installation**<br>[![Applications and APK installation](assets/screenshots/applications.png)](assets/screenshots/applications.png) |
+| **Stream settings**<br>[![Stream settings](assets/screenshots/stream-settings.png)](assets/screenshots/stream-settings.png) | **Screenshot preview**<br>[![Screenshot preview](assets/screenshots/screenshot.png)](assets/screenshots/screenshot.png) |
+
 ## Docker
 
 For **Linux amd64**, use this Compose file in Dockge or with `docker compose up -d`:
