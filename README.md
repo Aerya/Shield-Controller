@@ -27,14 +27,14 @@ services:
     image: ghcr.io/aerya/shield-controller:latest
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8123:8000"
+      - "8123:8000"
     environment:
       WS_SCRCPY_ALLOW_REMOTE_ADMIN: "1"
     volumes:
       - ./data:/data
 ```
 
-Open **http://localhost:8123** on the Docker host. For access from another device, configure an HTTPS reverse proxy and authentication. The environment variable above grants administrative access to anyone able to reach the service.
+Open **http://SERVER_IP:8123** on your LAN. Device information, apps and files work over HTTP. Browser screen mirroring requires a secure context (HTTPS or localhost). The variable above grants administrative access to anyone able to reach the service; sign-in is available in Settings → Users.
 
 Build locally: `docker build -t shield-controller:local .`
 

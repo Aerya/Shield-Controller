@@ -27,14 +27,14 @@ services:
     image: ghcr.io/aerya/shield-controller:latest
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8123:8000"
+      - "8123:8000"
     environment:
       WS_SCRCPY_ALLOW_REMOTE_ADMIN: "1"
     volumes:
       - ./data:/data
 ```
 
-Ouvrez **http://localhost:8123** sur la machine Docker. Depuis un autre appareil, configurez un reverse proxy HTTPS et une authentification. La variable ci-dessus donne les droits d’administration à toute personne pouvant accéder au service.
+Ouvrez **http://IP_DU_SERVEUR:8123** sur votre LAN. Les informations, applications et fichiers fonctionnent en HTTP. Le miroir d’écran nécessite un contexte sécurisé dans le navigateur (HTTPS ou localhost). La variable ci-dessus donne les droits d’administration à toute personne pouvant accéder au service ; l’authentification se configure dans Settings → Users.
 
 Compilation locale : `docker build -t shield-controller:local .`
 
