@@ -1,8 +1,12 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { readFile, stat } from 'fs/promises';
 import { createServer, type Server } from 'http';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdbClient } from '../AdbClient';
 import { DeviceManagerApi, parseApplications } from '../api/DeviceManagerApi';
+import { DeviceOptimization } from '../DeviceOptimization';
 
 const policy = vi.hoisted(() => ({ allowed: true }));
 vi.mock('../auth/requireOperator', () => ({
@@ -14,6 +18,7 @@ vi.mock('../auth/requireOperator', () => ({
     },
 }));
 
+let journalRoot: string;
 let server: Server;
 let base: string;
 const serial = '192.0.2.20:5555';
@@ -35,7 +40,11 @@ beforeEach(async () => {
     );
     adb.installApk.mockResolvedValue('Success');
     adb.devices.mockResolvedValue([{ serial, state: 'device' }]);
-    const api = new DeviceManagerApi(adb as unknown as AdbClient);
+    journalRoot = mkdtempSync(join(tmpdir(), 'optimization-api-'));
+    const api = new DeviceManagerApi(
+        adb as unknown as AdbClient,
+        new DeviceOptimization(adb as unknown as AdbClient, journalRoot),
+    );
     server = createServer((req, res) => {
         void api.handle(req, res);
     });
@@ -44,6 +53,7 @@ beforeEach(async () => {
     base = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}/api/manager/`;
 });
 afterEach(async () => {
+    rmSync(journalRoot, { recursive: true, force: true });
     await new Promise<void>((resolve) => {
         server.closeAllConnections();
         server.close(() => resolve());
@@ -70,6 +80,8 @@ describe('device management HTTP API', () => {
             ['apps', 'GET'],
             ['install', 'POST'],
             ['uninstall', 'POST'],
+            ['optimization', 'GET'],
+            ['optimization', 'POST'],
         ]) {
             expect((await fetch(url(route!), { method: method! })).status).toBe(403);
         }
@@ -124,7 +136,12 @@ describe('device management HTTP API', () => {
         expect(adb.shell).not.toHaveBeenCalled();
     });
     it('uninstalls only for user 0 and reports Android refusal', async () => {
-        adb.shell.mockResolvedValue('Failure [DELETE_FAILED_INTERNAL_ERROR]');
+        adb.shell.mockImplementation(async (_serial, command) => {
+            if (command.includes('resolve-activity')) return 'com.home.app/.Home';
+            if (command === 'dumpsys activity activities') return 'ACTIVITY MANAGER ACTIVITIES';
+            if (command === 'dumpsys media_session') return 'MEDIA SESSION SERVICE';
+            return 'Failure [DELETE_FAILED_INTERNAL_ERROR]';
+        });
         const response = await fetch(url('uninstall'), {
             method: 'POST',
             body: JSON.stringify({ packageName: 'org.example.app' }),
@@ -183,4 +200,19 @@ describe('device management HTTP API', () => {
         expect(adb.installApk).not.toHaveBeenCalled();
         expect((await fetch(url('uninstall'), { method: 'POST', body: '{' })).status).toBe(400);
     });
+});
+
+it('blocks uninstall of a live launcher even through the existing endpoint', async () => {
+    adb.shell.mockImplementation(async (_serial, command) => {
+        if (command.includes('resolve-activity')) return 'com.home.app/.Home';
+        if (command === 'dumpsys activity activities') return 'ACTIVITY MANAGER ACTIVITIES';
+        if (command === 'dumpsys media_session') return 'MEDIA SESSION SERVICE';
+        return '';
+    });
+    const response = await fetch(url('uninstall'), {
+        method: 'POST',
+        body: JSON.stringify({ packageName: 'com.home.app' }),
+    });
+    expect(response.status).toBe(400);
+    expect(adb.shell.mock.calls.some(([, command]) => command.startsWith('pm uninstall'))).toBe(false);
 });

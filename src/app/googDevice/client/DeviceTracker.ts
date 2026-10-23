@@ -372,6 +372,7 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
             for (const [tab, text] of [
                 ['info', 'device info'],
                 ['apps', 'applications / APK'],
+                ['optimization', 'Optimization'],
             ] as const) {
                 const button = document.createElement('button');
                 button.textContent = text;
