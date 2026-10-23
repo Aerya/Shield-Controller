@@ -8,6 +8,12 @@ Gérez votre **NVIDIA Shield / Android TV** depuis un navigateur. Auto-hébergé
 
 [English](README.md) · [Projet d’origine](https://github.com/bilbospocketses/ws-scrcpy-web)
 
+### Sécurité TLS — octobre 2026
+
+Mise à jour des certificats et des composants TLS des images après l’incident eMudhra. Les contrôles couvrent les chaînes compromises, dont les deux cas « No CT », et une connexion HTTPS valide. Une image déjà en cours d’exécution reste inchangée : son remplacement doit être planifié après validation.
+
+[Détails de l’incident](https://emudhra.we-have-a-problem.com/) · [TLS checks](security/emudhra/README.md)
+
 ## Fonctions
 
 - Aperçu de l’écran et télécommande : pavé directionnel, clavier et saisie de texte
