@@ -1,7 +1,9 @@
 import { t } from '../../client/Language';
+import { optimizationDescription } from './OptimizationCatalog';
 
 interface App {
     packageName: string;
+    system: boolean | null;
     disabled: boolean;
     category: string;
     protection: string | null;
@@ -20,11 +22,14 @@ export class OptimizationPanel {
     private disposed = false;
     private pending = false;
     private query = '';
-    private category = 'all';
+    private category = 'focused';
+    private page = 0;
+    private readonly pageSize = 12;
     constructor(
         private readonly container: HTMLElement,
         private readonly serial: string,
     ) {
+        container.classList.add('optimization-panel');
         void this.refresh();
     }
     dispose(): void {
@@ -97,7 +102,10 @@ export class OptimizationPanel {
         const filter = document.createElement('select');
         filter.setAttribute('aria-label', t('Filter applications'));
         for (const value of [
+            'focused',
             'all',
+            'system',
+            'user',
             'disabled',
             'protected',
             'Telemetry / feedback',
@@ -107,20 +115,53 @@ export class OptimizationPanel {
         ]) {
             const option = document.createElement('option');
             option.value = value;
-            option.textContent = t(value);
+            option.textContent = t(
+                (
+                    {
+                        focused: 'Everyday optimization',
+                        all: 'Advanced — all applications',
+                        system: 'System components',
+                        user: 'User apps',
+                    } as Record<string, string>
+                )[value] ?? value,
+            );
             filter.append(option);
         }
         filter.value = this.category;
         const list = document.createElement('div');
+        list.className = 'optimization-list';
+        const pagination = document.createElement('nav');
+        pagination.className = 'manager-toolbar optimization-pagination';
+        pagination.setAttribute('aria-label', t('Application pages'));
+        const count = document.createElement('span');
+        count.setAttribute('role', 'status');
+        const previous = document.createElement('button');
+        previous.textContent = t('Previous');
+        const next = document.createElement('button');
+        next.textContent = t('Next');
+        previous.onclick = () => {
+            this.page--;
+            renderApps();
+        };
+        next.onclick = () => {
+            this.page++;
+            renderApps();
+        };
+        pagination.append(previous, count, next);
+        const focusedNote = document.createElement('p');
+        focusedNote.className = 'optimization-view-note';
+
         const change = async (app: App, action: string): Promise<void> => {
             if (this.pending) return;
             const warning =
                 app.category === 'Local Plex server'
                     ? t('This stops libraries and streams hosted by this Shield. The Plex player is separate.')
-                    : t('This app and its background services will stop until re-enabled.');
+                    : t(optimizationDescription(app.packageName, app.system).explanation);
             if (
                 action === 'disable' &&
-                !window.confirm(`${app.packageName}\n\n${warning}\n\n${t('Disable this application?')}`)
+                !window.confirm(
+                    `${t(optimizationDescription(app.packageName, app.system).name)}\n${app.packageName}\n\n${warning}\n\n${t('Disable this application?')}`,
+                )
             )
                 return;
             this.pending = true;
@@ -134,6 +175,8 @@ export class OptimizationPanel {
                 if (!this.disposed) {
                     status.textContent = String(error);
                     refresh.disabled = false;
+                    showProtected.disabled = false;
+                    this.pending = false;
                     renderApps();
                 }
             } finally {
@@ -142,45 +185,120 @@ export class OptimizationPanel {
         };
         const renderApps = (): void => {
             list.replaceChildren();
-            const shown = data.apps.filter(
-                (app) =>
-                    app.packageName.toLowerCase().includes(this.query.toLowerCase()) &&
-                    (this.category === 'all' ||
-                        (this.category === 'disabled' && app.disabled) ||
-                        (this.category === 'protected' && app.protection) ||
-                        app.category === this.category),
-            );
-            for (const app of shown) {
+            const shown = data.apps
+                .filter((app) => {
+                    const info = optimizationDescription(app.packageName, app.system);
+                    const matches = `${app.packageName} ${t(info.name)} ${t(info.explanation)}`
+                        .toLocaleLowerCase()
+                        .includes(this.query.toLocaleLowerCase().trim());
+                    return (
+                        matches &&
+                        (this.category === 'all' ||
+                            (this.category === 'focused' &&
+                                (app.system !== true ||
+                                    app.category !== 'Application' ||
+                                    app.disabled ||
+                                    app.protection)) ||
+                            (this.category === 'system' && app.system === true) ||
+                            (this.category === 'user' && app.system === false) ||
+                            (this.category === 'disabled' && app.disabled) ||
+                            (this.category === 'protected' && app.protection) ||
+                            app.category === this.category)
+                    );
+                })
+                .sort(
+                    (a, b) =>
+                        t(optimizationDescription(a.packageName, a.system).name).localeCompare(
+                            t(optimizationDescription(b.packageName, b.system).name),
+                        ) || a.packageName.localeCompare(b.packageName),
+                );
+            this.page = Math.max(0, Math.min(this.page, Math.ceil(shown.length / this.pageSize) - 1));
+            const start = this.page * this.pageSize;
+            count.textContent = `${shown.length ? start + 1 : 0}–${Math.min(start + this.pageSize, shown.length)} / ${shown.length} · ${t('Total')}: ${data.apps.length}`;
+            previous.disabled = this.pending || this.page === 0;
+            next.disabled = this.pending || start + this.pageSize >= shown.length;
+            focusedNote.textContent =
+                this.category === 'focused'
+                    ? t(
+                          'Showing telemetry, diagnostics, Plex and user apps, plus disabled or protected apps. Advanced shows every package. This view is not a recommendation to disable everything.',
+                      )
+                    : t('Every action remains manual. System components can provide essential TV functions.');
+            for (const app of shown.slice(start, start + this.pageSize)) {
+                const info = optimizationDescription(app.packageName, app.system);
                 const row = document.createElement('div');
                 row.className = 'manager-app';
                 const details = document.createElement('div');
                 const name = document.createElement('strong');
-                name.textContent = app.packageName;
+                name.textContent = t(info.name);
+                const identifier = document.createElement('small');
+                identifier.textContent = app.packageName;
+                identifier.dataset['i18nSkip'] = '';
+                const explanation = document.createElement('p');
+                explanation.textContent = t(info.explanation);
+                explanation.className = 'optimization-explanation';
                 const meta = document.createElement('small');
                 meta.textContent = `${t(app.category)} · ${t(app.disabled ? 'Disabled' : 'Enabled')}${app.protection ? ` · ${t(app.protection)}` : ''}`;
-                details.append(name, meta);
+                details.append(name, identifier, meta, explanation);
                 const toggle = document.createElement('button');
                 toggle.textContent = t(app.disabled ? 'Enable' : 'Disable');
-                toggle.disabled = !app.disabled && (!!app.protection || !data.reliable);
+                toggle.disabled = this.pending || (!app.disabled && (!!app.protection || !data.reliable));
                 toggle.onclick = () => void change(app, app.disabled ? 'enable' : 'disable');
                 const protect = document.createElement('button');
                 protect.textContent = t(app.manual ? 'Remove manual protection' : 'Protect');
+                protect.disabled = this.pending;
                 protect.onclick = () => void change(app, app.manual ? 'unprotect' : 'protect');
-                row.append(details, toggle, protect);
+                const actions = document.createElement('div');
+                actions.className = 'optimization-actions';
+                actions.append(toggle, protect);
+                row.append(details, actions);
                 list.append(row);
             }
             if (!shown.length) list.textContent = t('No matching applications.');
         };
         search.oninput = () => {
             this.query = search.value;
+            this.page = 0;
             renderApps();
         };
         filter.onchange = () => {
             this.category = filter.value;
+            this.page = 0;
             renderApps();
         };
         toolbar.append(refresh, search, filter);
-        this.container.append(note, guidance, protectionNote, user, toolbar, status, list);
+        const heading = document.createElement('h2');
+        heading.textContent = t('Optimization');
+        const diagnostic = document.createElement('section');
+        diagnostic.className = 'optimization-diagnostics';
+        const diagnosticTitle = document.createElement('h3');
+        diagnosticTitle.textContent = t('Diagnostics and protections');
+        diagnostic.append(diagnosticTitle, user, status);
+        const protectedSummary = document.createElement('p');
+        const protectedApps = data.apps.filter((app) => app.protection);
+        protectedSummary.textContent = `${t('Protected apps')}: ${protectedApps.length}`;
+        const showProtected = document.createElement('button');
+        showProtected.textContent = t('Show protected apps');
+        showProtected.onclick = () => {
+            this.query = '';
+            search.value = '';
+            filter.value = 'protected';
+            this.category = 'protected';
+            this.page = 0;
+            renderApps();
+        };
+        diagnostic.append(protectedSummary, showProtected, protectionNote);
+        this.container.append(heading, note, diagnostic);
+        const help = document.createElement('details');
+        const helpTitle = document.createElement('summary');
+        helpTitle.textContent = t('About these options');
+        const labelNote = document.createElement('p');
+        labelNote.textContent = t(
+            'Names and explanations come from a curated catalog, not from installed APKs. Unknown packages are explicitly marked; their identifiers and all actions remain accessible.',
+        );
+        help.append(helpTitle, guidance, labelNote);
+        this.container.append(help, toolbar, focusedNote, list, pagination);
+        // Rendering occurs after loading; controls must be usable on the first page.
+        this.pending = false;
         renderApps();
         for (const [label, value] of [
             ['Process CPU snapshot', data.processes],
@@ -195,7 +313,7 @@ export class OptimizationPanel {
             output.style.overflowWrap = 'anywhere';
             output.textContent = value!;
             section.append(title, output);
-            this.container.append(section);
+            diagnostic.append(section);
         }
         const history = document.createElement('details');
         const title = document.createElement('summary');

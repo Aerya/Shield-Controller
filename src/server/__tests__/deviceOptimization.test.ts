@@ -130,3 +130,25 @@ it('does not report reactivation success when package verification fails', async
         'package list unavailable',
     );
 });
+it('reports Android system membership independently of optimization categories', async () => {
+    const implementation = shell.getMockImplementation()!;
+    const custom = {
+        shell: vi.fn(async (serial: string, command: string) =>
+            command.startsWith('pm list packages -s') ? 'package:com.home.app' : implementation(serial, command),
+        ),
+    };
+    const result = await new DeviceOptimization(custom, root).status('tv');
+    expect(result.apps.find((app) => app.packageName === 'com.home.app')?.system).toBe(true);
+    expect(result.apps.find((app) => app.packageName === 'com.player.app')?.system).toBe(false);
+});
+it('keeps apps available when Android cannot classify system packages', async () => {
+    const implementation = shell.getMockImplementation()!;
+    const custom = {
+        shell: vi.fn(async (serial: string, command: string) =>
+            command.startsWith('pm list packages -s') ? 'Error: unavailable' : implementation(serial, command),
+        ),
+    };
+    const result = await new DeviceOptimization(custom, root).status('tv');
+    expect(result.apps).toHaveLength(4);
+    expect(result.apps.every((app) => app.system === null)).toBe(true);
+});

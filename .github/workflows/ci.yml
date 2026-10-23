@@ -18,7 +18,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npx tsc --noEmit
-      - run: npx biome check src/server/api/DeviceManagerApi.ts src/server/__tests__/deviceManagerApi.test.ts src/app/googDevice/client/DeviceManagerModal.ts src/app/googDevice/client/__tests__/DeviceManagerModal.test.ts src/style/device-manager.css src/server/DeviceOptimization.ts src/server/__tests__/deviceOptimization.test.ts src/app/googDevice/client/OptimizationPanel.ts src/app/googDevice/client/__tests__/OptimizationPanel.test.ts
+      - run: npx biome check src/server/api/DeviceManagerApi.ts src/server/__tests__/deviceManagerApi.test.ts src/app/googDevice/client/DeviceManagerModal.ts src/app/googDevice/client/__tests__/DeviceManagerModal.test.ts src/style/device-manager.css src/server/DeviceOptimization.ts src/server/__tests__/deviceOptimization.test.ts src/app/googDevice/client/OptimizationPanel.ts src/app/googDevice/client/OptimizationCatalog.ts src/app/googDevice/client/__tests__/OptimizationPanel.test.ts
       - run: npm test -- --maxWorkers=4
       - run: npx playwright install --with-deps chromium firefox
       - run: npm run test:layout
