@@ -8,6 +8,12 @@ Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Dock
 
 [Français](README.fr.md) · [Upstream project](https://github.com/bilbospocketses/ws-scrcpy-web)
 
+### TLS security — October 2026
+
+Update image trust stores and TLS components following the eMudhra incident. Checks cover the compromised chains, including both No CT cases, and a valid HTTPS connection. Running images remain unchanged: schedule their replacement after validation.
+
+[Incident details](https://emudhra.we-have-a-problem.com/) · [TLS checks](security/emudhra/README.md)
+
 ## Features
 
 - Screen preview and remote control: D-pad, keyboard and text input

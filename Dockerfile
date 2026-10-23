@@ -27,10 +27,16 @@
 # Only the codename moves, because bookworm was Debian stable when the design
 # was written and trixie is stable now. Ruled by the user 2026-09-03; recorded
 # in the design amendment §16.5.
-ARG NODE_IMAGE=node:24-trixie-slim@sha256:50c3b2f6988dfc307b86e5301d69611af31f4789bdf232863b07d3b02fe55ae0
+ARG NODE_IMAGE=node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea
 
 # ---------------------------------------------------------------- build ------
 FROM ${NODE_IMAGE} AS build
+
+# eMudhra: refresh the OS trust store for this security update.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 
 # Lockfile first so a source-only edit does not re-resolve the tree.
@@ -68,6 +74,12 @@ RUN node scripts/fetch-prebuilts.mjs \
 
 # -------------------------------------------------------------- runtime ------
 FROM ${NODE_IMAGE} AS runtime
+
+# eMudhra: refresh the OS trust store for this security update.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Debian security updates for the pinned base.
 #
