@@ -104,23 +104,27 @@ export class DeviceOptimization {
         if (protection.protectedApps[pkg])
             throw new OptimizationError(`Protected application: ${protection.protectedApps[pkg]}`);
     }
-    private async packages(serial: string, user: number, disabled = false): Promise<string[]> {
-        const output = await this.adb.shell(serial, `pm list packages ${disabled ? '-d ' : ''}--user ${user}`);
+    private async packages(serial: string, user: number, disabled = false, system = false): Promise<string[]> {
+        const output = await this.adb.shell(
+            serial,
+            `pm list packages ${disabled ? '-d ' : system ? '-s ' : ''}--user ${user}`,
+        );
         if (output.split(/\r?\n/).some((line) => line.trim() && !/^package:[a-zA-Z][\w.]+$/.test(line.trim())))
             throw new Error('Android package list unavailable.');
         const result = names(output);
-        if (!disabled && !result.length) throw new Error('Android package list unavailable.');
+        if (!disabled && !system && !result.length) throw new Error('Android package list unavailable.');
         return result;
     }
     async status(serial: string) {
         const user = await this.user(serial);
-        const [installed, disabled, protection, processes, memory, storage] = await Promise.all([
+        const [installed, disabled, protection, processes, memory, storage, systems] = await Promise.all([
             this.packages(serial, user),
             this.packages(serial, user, true),
             this.protection(serial, user),
             this.adb.shell(serial, 'dumpsys cpuinfo').catch(() => 'Unavailable'),
             this.adb.shell(serial, 'cat /proc/meminfo').catch(() => 'Unavailable'),
             this.adb.shell(serial, 'df -k /data').catch(() => 'Unavailable'),
+            this.packages(serial, user, false, true).catch(() => null),
         ]);
         const disabledNames = new Set(disabled);
         return {
@@ -131,6 +135,7 @@ export class DeviceOptimization {
             storage,
             apps: installed.sort().map((packageName) => ({
                 packageName,
+                system: systems === null ? null : systems.includes(packageName),
                 disabled: disabledNames.has(packageName),
                 category: appCategory(packageName),
                 protection: protection.protectedApps[packageName] ?? null,
