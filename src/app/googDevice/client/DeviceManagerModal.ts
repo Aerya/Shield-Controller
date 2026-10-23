@@ -1,4 +1,5 @@
 import { t } from '../../client/Language';
+import { OptimizationPanel } from './OptimizationPanel';
 import '../../../style/device-manager.css';
 import { Modal } from '../../ui/Modal';
 
@@ -11,6 +12,7 @@ interface AppRow {
 }
 
 export class DeviceManagerModal extends Modal {
+    private optimizationPanel: OptimizationPanel | undefined;
     private serial: string;
     private apps: AppRow[] = [];
     private pending = false;
@@ -21,7 +23,7 @@ export class DeviceManagerModal extends Modal {
     declare private status: HTMLElement;
     declare private content: HTMLElement;
 
-    constructor(serial: string, label: string, tab: 'info' | 'apps') {
+    constructor(serial: string, label: string, tab: 'info' | 'apps' | 'optimization') {
         super({ title: `Shield Controller — ${label}` });
         this.serial = serial;
         this.frameEl.classList.add('device-manager');
@@ -45,6 +47,7 @@ export class DeviceManagerModal extends Modal {
         )
             return;
         this.disposed = true;
+        this.optimizationPanel?.dispose();
         clearTimeout(this.refreshTimer);
         this.xhr?.abort();
         super.close(result);
@@ -61,13 +64,14 @@ export class DeviceManagerModal extends Modal {
         return data;
     }
 
-    private async load(tab: 'info' | 'apps'): Promise<void> {
+    private async load(tab: 'info' | 'apps' | 'optimization'): Promise<void> {
         clearTimeout(this.refreshTimer);
         this.pending = true;
         this.status.textContent = 'Loading…';
         this.content.replaceChildren();
         try {
             if (tab === 'info') this.renderInfo(await this.request('info'));
+            else if (tab === 'optimization') this.optimizationPanel = new OptimizationPanel(this.content, this.serial);
             else {
                 this.apps = (await this.request('apps')).apps;
                 this.renderApps();

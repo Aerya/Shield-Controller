@@ -2,7 +2,7 @@ import { createWriteStream } from 'fs';
 import { mkdtemp, open, rm } from 'fs/promises';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { Transform } from 'stream';
 import { pipeline } from 'stream/promises';
 import { AdbClient, parseGetProp } from '../AdbClient';
@@ -11,6 +11,7 @@ import { Config } from '../Config';
 import { DeviceInternet } from '../DeviceInternet';
 import { cpuUsage, diskUsage, temperatures } from '../DeviceMetrics';
 import { DeviceNetwork, DnsInputError } from '../DeviceNetwork';
+import { DeviceOptimization, OptimizationError } from '../DeviceOptimization';
 import { isValidSerial, shArg } from '../security/deviceInput';
 import { BodyTooLargeError, InvalidJsonError, readJsonBodyStrict } from './utils';
 
@@ -56,7 +57,21 @@ export class DeviceManagerApi {
     private readonly busy = new Set<string>();
     private readonly internetBusy = new Set<string>();
     private readonly dnsBusy = new Set<string>();
-    constructor(private readonly adb = new AdbClient(Config.getInstance().adbPath)) {}
+    constructor(
+        private readonly adb = new AdbClient(Config.getInstance().adbPath),
+        private optimizationService?: DeviceOptimization,
+    ) {}
+
+    private optimization(): DeviceOptimization {
+        if (!this.optimizationService) {
+            const config = Config.getInstance();
+            this.optimizationService = new DeviceOptimization(
+                this.adb,
+                join(config.dataRoot ?? dirname(config.dependenciesPath), 'optimization'),
+            );
+        }
+        return this.optimizationService;
+    }
 
     async handle(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
         const url = new URL(req.url ?? '/', 'http://localhost');
@@ -73,7 +88,16 @@ export class DeviceManagerApi {
                 reply(res, 409, { error: 'Device disconnected or awaiting authorization on the TV.' });
                 return true;
             }
-            if (req.method === 'GET' && url.pathname === '/api/manager/screenshot') {
+            if (req.method === 'GET' && url.pathname === '/api/manager/optimization') {
+                reply(res, 200, await this.optimization().status(serial));
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/optimization') {
+                const body = await readJsonBodyStrict(req);
+                reply(
+                    res,
+                    200,
+                    await this.optimization().change(serial, body['packageName'], body['action'], body['user']),
+                );
+            } else if (req.method === 'GET' && url.pathname === '/api/manager/screenshot') {
                 const png = await this.adb.screenshot(serial);
                 res.writeHead(200, {
                     'Content-Type': 'image/png',
@@ -167,6 +191,7 @@ export class DeviceManagerApi {
                     reply(res, 400, { error: 'Invalid application package name.' });
                     return true;
                 }
+                await this.optimization().assertUnprotected(serial, pkg, 0);
                 const output = await this.adb.shell(serial, `pm uninstall --user 0 ${shArg(pkg)}`, 60_000);
                 reply(res, /\bSuccess\b/.test(output) ? 200 : 422, {
                     success: /\bSuccess\b/.test(output),
@@ -191,7 +216,9 @@ export class DeviceManagerApi {
             const status =
                 error instanceof BodyTooLargeError
                     ? 413
-                    : error instanceof InvalidJsonError || error instanceof DnsInputError
+                    : error instanceof InvalidJsonError ||
+                        error instanceof DnsInputError ||
+                        error instanceof OptimizationError
                       ? 400
                       : 502;
             reply(res, status, { error: error instanceof Error ? error.message : 'Device operation failed.' });
