@@ -275,7 +275,7 @@ export class TweaksPanel {
     }
     private snapshotSection(user: number): HTMLElement {
         const section = document.createElement('section');
-        section.className = 'optimization-diagnostics';
+        section.className = 'optimization-section';
         const title = document.createElement('h3');
         title.textContent = t('Snapshot');
         const note = document.createElement('p');

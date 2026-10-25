@@ -326,7 +326,7 @@ export class OptimizationPanel {
             void bulk('optimization-restore', { user: data.user }, 'Re-enabled');
         };
         const wizard = document.createElement('details');
-        wizard.className = 'optimization-diagnostics';
+        wizard.className = 'optimization-section';
         const wizardTitle = document.createElement('summary');
         wizardTitle.textContent = t('Recommended cleanup');
         const wizardNote = document.createElement('p');

@@ -1,6 +1,6 @@
 import type { AdbClient } from './AdbClient';
 import type { DeviceOptimization } from './DeviceOptimization';
-import { type DeviceTweaks, SETTING_TWEAKS } from './DeviceTweaks';
+import { DENSITY, type DeviceTweaks, SETTING_TWEAKS } from './DeviceTweaks';
 
 export const SNAPSHOT_FORMAT = 'shield-controller-snapshot';
 const PACKAGE = /^[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)+$/;
@@ -51,7 +51,10 @@ export function validateSnapshot(value: unknown): Snapshot {
         if (!tweak || (setting !== null && !tweak.values.includes(setting)))
             throw new SnapshotError('Invalid setting in snapshot.');
     }
-    if (snapshot.density !== null && !Number.isInteger(snapshot.density))
+    if (
+        snapshot.density !== null &&
+        !(Number.isInteger(snapshot.density) && snapshot.density >= DENSITY.min && snapshot.density <= DENSITY.max)
+    )
         throw new SnapshotError('Invalid density in snapshot.');
     if (snapshot.launcher !== null && (typeof snapshot.launcher !== 'string' || !COMPONENT.test(snapshot.launcher)))
         throw new SnapshotError('Invalid launcher in snapshot.');
@@ -97,6 +100,12 @@ export class DeviceSnapshot {
         const steps: PlanStep[] = [];
         const skipped: { target: string; reason: string }[] = [];
         const current = new Map(apps.apps.map((app) => [app.packageName, app]));
+        // The current launcher stops being protected once the snapshot's launcher is set; change()
+        // re-checks every protection at execution time anyway.
+        const switching =
+            !!snapshot.launcher &&
+            snapshot.launcher !== settings.launcher.home &&
+            settings.launcher.launchers.includes(snapshot.launcher);
         for (const [pkg, state] of Object.entries(snapshot.packages)) {
             const app = current.get(pkg);
             if (!app) {
@@ -104,7 +113,7 @@ export class DeviceSnapshot {
                 continue;
             }
             if (app.disabled === (state === 'disabled')) continue;
-            if (state === 'disabled' && app.protection) {
+            if (state === 'disabled' && app.protection && !(switching && app.protection === 'Active launcher')) {
                 skipped.push({ target: pkg, reason: app.protection });
                 continue;
             }

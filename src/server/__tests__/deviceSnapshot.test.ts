@@ -15,7 +15,7 @@ function setup() {
             user: 0,
             apps: [
                 app('com.nvidia.stats', false),
-                app('com.google.android.tvlauncher', false),
+                app('com.google.android.tvlauncher', false, 'Active launcher'),
                 app('com.old.disabled', true),
                 app('com.player.app', false, 'Media session'),
             ],
@@ -102,6 +102,11 @@ describe('device snapshots', () => {
         ]);
         expect(calls).toEqual([]);
     });
+    it('keeps the current launcher protected when the snapshot does not switch launcher', async () => {
+        const plan = await setup().service.plan('tv', snapshot({ launcher: null }));
+        expect(plan.steps.some((step) => step.target === 'com.google.android.tvlauncher')).toBe(false);
+        expect(plan.skipped).toContainEqual({ target: 'com.google.android.tvlauncher', reason: 'Active launcher' });
+    });
     it('applies the launcher first and records per-step failures', async () => {
         const { service, calls } = setup();
         const result = await service.apply('tv', snapshot(), 0);
@@ -122,6 +127,7 @@ describe('device snapshots', () => {
             snapshot({ settings: { adb_enabled: '0' } }),
             snapshot({ settings: { hdmi_cec: "1'; reboot" } }),
             snapshot({ density: '280; reboot' }),
+            snapshot({ density: 20 }),
             snapshot({ launcher: 'not a component' }),
         ])
             expect(() => validateSnapshot(bad)).toThrow();
