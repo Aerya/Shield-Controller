@@ -12,6 +12,8 @@ import { DeviceInternet } from '../DeviceInternet';
 import { cpuUsage, diskUsage, temperatures } from '../DeviceMetrics';
 import { DeviceNetwork, DnsInputError } from '../DeviceNetwork';
 import { DeviceOptimization, OptimizationError } from '../DeviceOptimization';
+import { DeviceSnapshot, SnapshotError } from '../DeviceSnapshot';
+import { DeviceTweaks, TweakError } from '../DeviceTweaks';
 import { isValidSerial, shArg } from '../security/deviceInput';
 import { BodyTooLargeError, InvalidJsonError, readJsonBodyStrict } from './utils';
 
@@ -60,7 +62,19 @@ export class DeviceManagerApi {
     constructor(
         private readonly adb = new AdbClient(Config.getInstance().adbPath),
         private optimizationService?: DeviceOptimization,
+        private tweaksService?: DeviceTweaks,
     ) {}
+
+    private tweaks(): DeviceTweaks {
+        if (!this.tweaksService) {
+            const config = Config.getInstance();
+            this.tweaksService = new DeviceTweaks(
+                this.adb,
+                join(config.dataRoot ?? dirname(config.dependenciesPath), 'tweaks'),
+            );
+        }
+        return this.tweaksService;
+    }
 
     private optimization(): DeviceOptimization {
         if (!this.optimizationService) {
@@ -71,6 +85,10 @@ export class DeviceManagerApi {
             );
         }
         return this.optimizationService;
+    }
+
+    private snapshot(): DeviceSnapshot {
+        return new DeviceSnapshot(this.adb, this.optimization(), this.tweaks());
     }
 
     async handle(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
@@ -97,6 +115,25 @@ export class DeviceManagerApi {
                     200,
                     await this.optimization().change(serial, body['packageName'], body['action'], body['user']),
                 );
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/optimization-restore') {
+                const body = await readJsonBodyStrict(req);
+                reply(res, 200, await this.optimization().restoreAll(serial, body['user']));
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/optimization-batch') {
+                const body = await readJsonBodyStrict(req);
+                reply(res, 200, await this.optimization().batchDisable(serial, body['packages'], body['user']));
+            } else if (req.method === 'GET' && url.pathname === '/api/manager/snapshot') {
+                reply(res, 200, await this.snapshot().capture(serial));
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/snapshot-plan') {
+                const body = await readJsonBodyStrict(req);
+                reply(res, 200, await this.snapshot().plan(serial, body['snapshot']));
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/snapshot-apply') {
+                const body = await readJsonBodyStrict(req);
+                reply(res, 200, await this.snapshot().apply(serial, body['snapshot'], body['user']));
+            } else if (req.method === 'GET' && url.pathname === '/api/manager/tweaks') {
+                reply(res, 200, await this.tweaks().status(serial));
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/tweaks') {
+                const body = await readJsonBodyStrict(req);
+                reply(res, 200, await this.tweaks().change(serial, body['id'], body['value']));
             } else if (req.method === 'GET' && url.pathname === '/api/manager/screenshot') {
                 const png = await this.adb.screenshot(serial);
                 res.writeHead(200, {
@@ -218,7 +255,9 @@ export class DeviceManagerApi {
                     ? 413
                     : error instanceof InvalidJsonError ||
                         error instanceof DnsInputError ||
-                        error instanceof OptimizationError
+                        error instanceof OptimizationError ||
+                        error instanceof TweakError ||
+                        error instanceof SnapshotError
                       ? 400
                       : 502;
             reply(res, status, { error: error instanceof Error ? error.message : 'Device operation failed.' });

@@ -137,13 +137,15 @@ dialog.modal .modal-frame.device-manager {
 .optimization-panel h2 {
     margin-bottom: 8px;
 }
-.optimization-diagnostics {
+.optimization-diagnostics,
+.optimization-section {
     border: 1px solid var(--button-border-color, #666);
     border-radius: 8px;
     padding: 12px 16px;
     margin: 16px 0;
 }
-.optimization-diagnostics h3 {
+.optimization-diagnostics h3,
+.optimization-section h3 {
     margin-top: 0;
 }
 .optimization-panel .manager-app {
@@ -188,4 +190,15 @@ dialog.modal .modal-frame.device-manager {
     .optimization-panel .manager-toolbar select {
         width: 100%;
     }
+}
+.optimization-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+}
+.optimization-choice input {
+    flex: none;
+    margin-top: 3px;
 }

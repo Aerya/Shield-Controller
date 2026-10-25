@@ -25,6 +25,8 @@ Update image trust stores and TLS components following the eMudhra incident. Che
 - French/English interface with tool panels to the right of the device
 - PNG screenshots with preview and download, including over LAN HTTP
 - Automatic public IP and IPv4/IPv6 DNS detection with provider names, domain tests and Android Private DNS
+- HDMI-CEC, frame rate, long-press, animation, surround sound, display density and default launcher settings, with restore to original
+- Confirmed recommended cleanup, bulk re-enable, and snapshots to roll back or copy a setup
 - CPU, RAM, storage, available temperatures, Android-declared home and foreground application monitoring (optional refresh every 5 seconds).
 
 ## Screenshots
@@ -44,11 +46,35 @@ Known apps have readable names and explanations of their purpose and the consequ
 
 The **Optimization** panel lists apps for the active Android user, a process CPU snapshot, memory and storage. A snapshot does not establish that an app slows down boot.
 
-Actions are individual and manual: **Disable**, **Enable**, **Protect**, and **Remove manual protection**. Disabling preserves data but stops the app’s functions and services until enabled again. Filters distinguish NVIDIA/Google telemetry and feedback, NVIDIA diagnostics, the local Plex server (`com.plexapp.mediaserver.smb`) and Plex player (`com.plexapp.android`). Plex database maintenance and Scrob are out of scope.
+Individual actions are **Disable**, **Enable**, **Protect**, and **Remove manual protection**. Disabling preserves data but stops the app’s functions and services until enabled again. Filters distinguish NVIDIA/Google telemetry and feedback, NVIDIA diagnostics, the local Plex server (`com.plexapp.mediaserver.smb`) and Plex player (`com.plexapp.android`). Plex database maintenance and Scrob are out of scope.
 
-Before each disable (and in the existing uninstall API), the server checks the resolved home launcher, foreground app and published media sessions (including paused sessions). **Protect** your usual player to keep it protected when closed or when it does not publish a media session. Other apps remain selectable; nothing is disabled automatically. If Android cannot provide reliable protection information, disabling requires a fresh valid diagnostic; enabling remains available.
+Before each disable (and in the existing uninstall API), the server checks the resolved home launcher, foreground app and published media sessions (including paused sessions). **Protect** your usual player to keep it protected when closed or when it does not publish a media session. Nothing is disabled without your confirmation. If Android cannot provide reliable protection information, disabling requires a fresh valid diagnostic; enabling remains available.
 
 Persistent history retains the last 200 attempts per device and Android user under the server data directory (`optimization/`), including time, action and result. A pending entry may have been interrupted: refresh the actual device state before retrying. Enable apps again using the disabled apps filter. Detection cannot guarantee protection against a simultaneous app switch on the TV.
+
+**Recommended cleanup** offers a short list maintained by Shield Controller. NVIDIA/Google telemetry and feedback are preselected. Optional items (NVIDIA diagnostics, home-screen recommendations, local Plex server, preinstalled apps) are unticked. Apps already disabled or protected are not shown. After confirmation, each app goes through the same protections and checks as an individual disable. Only packages from this list can be disabled in a batch.
+
+**Re-enable apps disabled here** undoes, in one go, the disables made by Shield Controller according to its history. Packages disabled by the firmware itself are left alone; the result lists any re-enable Android refused.
+
+## Settings and tweaks
+
+The **Settings and tweaks** panel changes documented Android settings, each limited to an allowlist of values and verified after writing:
+
+- HDMI-CEC, turning the TV on and off with the Shield
+- Match content frame rate (Android 12+; on the Shield, use the NVIDIA setting in the TV menu)
+- Remote long-press delay
+- Animation scales (window, transition, duration)
+- Surround sound output (automatic, never, always, manual)
+- Display scaling (density from 160 to 640 dpi, resettable)
+- Default launcher among installed home screens
+
+The value seen before the first change is kept on the server (`tweaks/`): **Restore original** puts it back. Settings unavailable on the device’s Android version are greyed out. Private DNS stays in the DNS panel.
+
+### Snapshots
+
+**Save snapshot** downloads a JSON file with each app’s enabled/disabled state, the settings above, density and launcher. **Load snapshot** first shows the differences with the device, then **Apply snapshot** applies them. On the same device this rolls back; on another one it copies the setup.
+
+The launcher changes first, then re-enables, settings, density and finally disables. Protections still apply. Missing apps, unavailable settings and “Android default” values are skipped and listed. Each step’s result is shown; a refused step does not stop the others.
 
 ## Docker
 
@@ -99,5 +125,7 @@ Opening the DNS panel automatically detects public IPs and DNS resolvers through
 ## Credits & license
 
 Based on **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)**, with device management additions by Aerya. Screen mirroring uses **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)**.
+
+Settings, recommended cleanup, bulk re-enable and snapshots inspired by **[bryanroscoe/shield_optimizer](https://github.com/bryanroscoe/shield_optimizer)** (ATV Optimizer), since its author forbids using its code: no code or lists are taken from it; the features were rewritten from public Android commands.
 
 **GPL-3.0-only** — see [LICENSE](LICENSE). Upstream copyright notices are preserved.
