@@ -152,3 +152,23 @@ it('keeps apps available when Android cannot classify system packages', async ()
     expect(result.apps).toHaveLength(4);
     expect(result.apps.every((app) => app.system === null)).toBe(true);
 });
+it('re-enables only applications that Shield Controller disabled', async () => {
+    const instance = service();
+    await instance.change('tv', 'com.nvidia.stats', 'disable', 0);
+    expect(await instance.restoreAll('tv', 0)).toEqual({ enabled: ['com.nvidia.stats'], failed: [] });
+    expect(disabled).toBe(false);
+    expect(await instance.restoreAll('tv', 0)).toEqual({ enabled: [], failed: [] });
+    await expect(instance.restoreAll('tv', 10)).rejects.toThrow('user changed');
+});
+it('batch-disables only listed recommendations and keeps protections per app', async () => {
+    await expect(service().batchDisable('tv', ['com.player.app'], 0)).rejects.toThrow('recommendation list');
+    await expect(service().batchDisable('tv', [], 0)).rejects.toThrow('recommendation list');
+    expect(await service().batchDisable('tv', ['com.nvidia.stats', 'com.nvidia.stats'], 0)).toEqual({
+        disabled: ['com.nvidia.stats'],
+        failed: [],
+    });
+    expect(disabled).toBe(true);
+    expect(
+        (await service().status('tv')).apps.find((app) => app.packageName === 'com.nvidia.stats')?.recommendation,
+    ).toBe('recommended');
+});

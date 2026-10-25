@@ -8,6 +8,7 @@ interface App {
     category: string;
     protection: string | null;
     manual: boolean;
+    recommendation: 'recommended' | 'optional' | null;
 }
 interface Snapshot {
     user: number;
@@ -286,8 +287,94 @@ export class OptimizationPanel {
             this.page = 0;
             renderApps();
         };
-        diagnostic.append(protectedSummary, showProtected, protectionNote);
-        this.container.append(heading, note, diagnostic);
+        // Batch actions share one flow: POST, refresh, then report what Android accepted or refused.
+        const bulk = async (endpoint: string, body: unknown, done: string): Promise<void> => {
+            this.pending = true;
+            for (const button of this.container.querySelectorAll('button')) button.disabled = true;
+            status.textContent = t('Loading…');
+            try {
+                const response = await fetch(`/api/manager/${endpoint}?serial=${encodeURIComponent(this.serial)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(t(result.error ?? `HTTP ${response.status}`));
+                this.pending = false;
+                await this.refresh();
+                if (!this.disposed) {
+                    const failed = (result.failed as { packageName: string; error: string }[])
+                        .map((item) => `${item.packageName}: ${t(item.error)}`)
+                        .join('\n');
+                    const count = (result.enabled ?? result.disabled).length;
+                    window.alert(`${t(done)}: ${count}${failed ? `\n${t('Failed')}:\n${failed}` : ''}`);
+                }
+            } catch (error) {
+                this.pending = false;
+                if (!this.disposed) {
+                    status.textContent = String(error);
+                    for (const button of this.container.querySelectorAll('button')) button.disabled = false;
+                    renderApps();
+                }
+            }
+        };
+        const restoreAll = document.createElement('button');
+        restoreAll.textContent = t('Re-enable apps disabled here');
+        restoreAll.onclick = () => {
+            if (this.pending || !window.confirm(t('Re-enable every application that Shield Controller disabled?')))
+                return;
+            void bulk('optimization-restore', { user: data.user }, 'Re-enabled');
+        };
+        const wizard = document.createElement('details');
+        wizard.className = 'optimization-diagnostics';
+        const wizardTitle = document.createElement('summary');
+        wizardTitle.textContent = t('Recommended cleanup');
+        const wizardNote = document.createElement('p');
+        wizardNote.textContent = t(
+            'Telemetry and feedback apps are preselected. Optional items remove a feature you may use: tick them only if you do not need it. Protections still apply to each app, and everything can be re-enabled.',
+        );
+        wizard.append(wizardTitle, wizardNote);
+        const candidates = data.apps.filter((app) => app.recommendation && !app.disabled && !app.protection);
+        const boxes: HTMLInputElement[] = [];
+        for (const app of candidates.sort(
+            (a, b) => Number(b.recommendation === 'recommended') - Number(a.recommendation === 'recommended'),
+        )) {
+            const info = optimizationDescription(app.packageName, app.system);
+            const label = document.createElement('label');
+            label.className = 'optimization-choice';
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.value = app.packageName;
+            box.checked = app.recommendation === 'recommended';
+            const text = document.createElement('span');
+            text.textContent = `${t(info.name)} (${app.packageName}) · ${t(app.recommendation === 'recommended' ? 'Recommended' : 'Optional')} — ${t(info.explanation)}`;
+            label.append(box, text);
+            boxes.push(box);
+            wizard.append(label);
+        }
+        const run = document.createElement('button');
+        run.textContent = t('Disable selected apps');
+        run.disabled = !data.reliable || !candidates.length;
+        run.onclick = () => {
+            const packages = boxes.filter((box) => box.checked).map((box) => box.value);
+            if (
+                this.pending ||
+                !packages.length ||
+                !window.confirm(`${t('Disable these applications?')}\n\n${packages.join('\n')}`)
+            )
+                return;
+            void bulk('optimization-batch', { packages, user: data.user }, 'Disabled apps');
+        };
+        if (!candidates.length) {
+            const empty = document.createElement('p');
+            empty.textContent = t(
+                'Nothing left to clean up: recommended apps are disabled, protected or not installed.',
+            );
+            wizard.append(empty);
+        }
+        wizard.append(run);
+        diagnostic.append(protectedSummary, showProtected, restoreAll, protectionNote);
+        this.container.append(heading, note, diagnostic, wizard);
         const help = document.createElement('details');
         const helpTitle = document.createElement('summary');
         helpTitle.textContent = t('About these options');

@@ -49,6 +49,23 @@ export function appCategory(pkg: string): string {
     if (pkg === 'com.plexapp.android') return 'Plex player';
     return 'Application';
 }
+// Shield Controller's own conservative list. "recommended" is preselected in the wizard; "optional"
+// is shown unticked because it removes a feature someone may use. Nothing else can be batch-disabled.
+export const RECOMMENDATIONS: Record<string, 'recommended' | 'optional'> = {
+    'com.nvidia.stats': 'recommended',
+    'com.nvidia.feedback': 'recommended',
+    'com.google.android.feedback': 'recommended',
+    'com.nvidia.diagtools': 'optional',
+    'com.google.android.tvrecommendations': 'optional',
+    'com.plexapp.mediaserver.smb': 'optional',
+    'com.amazon.music.tv': 'optional',
+    'com.nvidia.bbciplayer': 'optional',
+    'com.nvidia.bbciplayer.launch': 'optional',
+    'com.nvidia.bbciplayer.launchsport': 'optional',
+    'com.zattoo.player': 'optional',
+    'air.ITVMobilePlayer': 'optional',
+    'air.com.vudu.air.DownloaderTablet': 'optional',
+};
 export class DeviceOptimization {
     private readonly busy = new Set<string>();
     constructor(
@@ -140,9 +157,52 @@ export class DeviceOptimization {
                 category: appCategory(packageName),
                 protection: protection.protectedApps[packageName] ?? null,
                 manual: protection.journal.protected.includes(packageName),
+                recommendation: RECOMMENDATIONS[packageName] ?? null,
             })),
             history: protection.journal.history.slice(-200).reverse(),
         };
+    }
+    // Each package still goes through change(): protections, user check and verification apply one by one.
+    async batchDisable(serial: string, packages: unknown, expectedUser: unknown) {
+        if (
+            !Array.isArray(packages) ||
+            !packages.length ||
+            packages.some((pkg) => typeof pkg !== 'string' || !(pkg in RECOMMENDATIONS))
+        )
+            throw new OptimizationError('Only applications from the recommendation list can be disabled in a batch.');
+        const disabled: string[] = [];
+        const failed: { packageName: string; error: string }[] = [];
+        for (const pkg of new Set(packages as string[])) {
+            try {
+                await this.change(serial, pkg, 'disable', expectedUser);
+                disabled.push(pkg);
+            } catch (error) {
+                failed.push({ packageName: pkg, error: error instanceof Error ? error.message : 'Failed' });
+            }
+        }
+        return { disabled, failed };
+    }
+    // Undo only what this tool disabled: packages disabled by the firmware itself stay untouched.
+    async restoreAll(serial: string, expectedUser: unknown) {
+        const user = await this.user(serial);
+        if (user !== expectedUser) throw new OptimizationError('Android user changed. Refresh diagnostics.');
+        const last = new Map<string, string>();
+        for (const entry of this.read(serial, user).history)
+            if (entry.result === 'success' && (entry.action === 'disable' || entry.action === 'enable'))
+                last.set(entry.packageName, entry.action);
+        const disabled = new Set(await this.packages(serial, user, true));
+        const enabled: string[] = [];
+        const failed: { packageName: string; error: string }[] = [];
+        for (const [pkg, action] of last) {
+            if (action !== 'disable' || !disabled.has(pkg)) continue;
+            try {
+                await this.change(serial, pkg, 'enable', user);
+                enabled.push(pkg);
+            } catch (error) {
+                failed.push({ packageName: pkg, error: error instanceof Error ? error.message : 'Failed' });
+            }
+        }
+        return { enabled, failed };
     }
     async change(serial: string, pkg: unknown, action: unknown, expectedUser: unknown) {
         if (

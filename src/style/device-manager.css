@@ -189,3 +189,14 @@ dialog.modal .modal-frame.device-manager {
         width: 100%;
     }
 }
+.optimization-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+}
+.optimization-choice input {
+    flex: none;
+    margin-top: 3px;
+}
