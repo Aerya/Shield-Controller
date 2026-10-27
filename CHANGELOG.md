@@ -13,7 +13,7 @@ Update image trust stores and TLS components following the eMudhra incident. Che
 
 ## 2026-10-25
 
-- Add the Settings and tweaks panel (HDMI-CEC, frame rate, long-press, animations, surround sound, density, default launcher) with restore to original, confirmed recommended cleanup, bulk re-enable of apps disabled by Shield Controller, and snapshots (save, preview differences, apply). Inspired by bryanroscoe/shield_optimizer, without reusing its code.
+- Add the Settings and tweaks panel (HDMI-CEC, frame rate, long-press, animations, surround sound, density, default launcher) with restore to original, confirmed recommended cleanup, bulk re-enable of apps disabled by Shield Controller, and snapshots (save, preview differences, apply).
 
 ## 2026-10-18
 

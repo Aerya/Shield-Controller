@@ -13,7 +13,7 @@ Mise à jour des certificats et des composants TLS des images après l’inciden
 
 ## 2026-10-25
 
-- Ajoute le panneau Réglages (HDMI-CEC, fréquence d’images, appui long, animations, son surround, densité, launcher par défaut) avec restauration de l’origine, le nettoyage recommandé à valider, la réactivation groupée des applications désactivées par Shield Controller et les instantanés (enregistrement, aperçu des différences, application). Inspiré de bryanroscoe/shield_optimizer, sans reprise de code.
+- Ajoute le panneau Réglages (HDMI-CEC, fréquence d’images, appui long, animations, son surround, densité, launcher par défaut) avec restauration de l’origine, le nettoyage recommandé à valider, la réactivation groupée des applications désactivées par Shield Controller et les instantanés (enregistrement, aperçu des différences, application).
 
 ## 2026-10-18
 
