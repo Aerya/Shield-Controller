@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { AdbClient } from './AdbClient';
 import { shArg } from './security/deviceInput';
+import { persistentPackages, TV_COMPONENTS } from './TvCompatibility';
 import { writeFileAtomicSync } from './util/atomicFile';
 
 const PACKAGE = /^[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)+$/;
@@ -93,7 +94,7 @@ export class DeviceOptimization {
         return Number(value);
     }
     async protection(serial: string, user: number) {
-        const [home, foreground, media] = await Promise.all([
+        const [home, foreground, media, packageDump] = await Promise.all([
             this.adb
                 .shell(
                     serial,
@@ -102,8 +103,11 @@ export class DeviceOptimization {
                 .catch(() => ''),
             this.adb.shell(serial, OPT_COMMANDS.foreground).catch(() => ''),
             this.adb.shell(serial, OPT_COMMANDS.media).catch(() => ''),
+            this.adb.shell(serial, 'dumpsys package').catch(() => ''),
         ]);
         const protectedApps = protectedPackages(home, foreground, media);
+        for (const pkg of Object.keys(TV_COMPONENTS)) protectedApps[pkg] = 'Essential TV component';
+        for (const pkg of persistentPackages(packageDump)) protectedApps[pkg] = 'Persistent Android component';
         const reliable =
             /[\w.]+\/[\w.$]+/.test(home) &&
             !/ResolverActivity|ChooserActivity/.test(home) &&

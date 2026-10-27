@@ -173,3 +173,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
+
+## TV Detox (optional Android launcher)
+
+[Ansub/tv-detox](https://github.com/Ansub/tv-detox), MIT license. Shield Controller optionally downloads the upstream `tvhome.apk` release v1.5.6 directly to the target Android device through its server-side ADB client. The APK is not bundled in Shield Controller. No upstream shell scripts or Java source are incorporated. Maintenance workflows and compatibility checks are independently implemented using Android commands; TV Detox documentation informed the vendor compatibility facts. See the [upstream license](https://github.com/Ansub/tv-detox/blob/main/LICENSE).

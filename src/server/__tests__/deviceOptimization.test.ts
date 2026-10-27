@@ -42,6 +42,24 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 const service = () => new DeviceOptimization({ shell }, root);
 describe('reversible device optimization', () => {
+    it('protects essential TV components and persistent packages outside the active launcher', async () => {
+        const guarded = new DeviceOptimization(
+            {
+                shell: async (serial, command) =>
+                    command === 'dumpsys package'
+                        ? '  Package [com.nvidia.stats] (abc):\n    pkgFlags=[ SYSTEM PERSISTENT ]'
+                        : shell(serial, command),
+            },
+            root,
+        );
+        await expect(guarded.assertUnprotected('tv', 'com.android.bluetooth', 0)).rejects.toThrow(
+            'Essential TV component',
+        );
+        await expect(guarded.change('tv', 'com.nvidia.stats', 'disable', 0)).rejects.toThrow(
+            'Persistent Android component',
+        );
+        expect(disabled).toBe(false);
+    });
     it('diagnoses without mutations and distinguishes telemetry', async () => {
         const result = await service().status('tv');
         expect(result.apps.find((app) => app.packageName === 'com.nvidia.stats')?.category).toBe(

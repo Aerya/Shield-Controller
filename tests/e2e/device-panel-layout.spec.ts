@@ -209,3 +209,106 @@ for (const width of [1100, 390]) {
         expect(posts).toBe(0);
     });
 }
+
+for (const width of [1100, 390]) {
+    test(`TV maintenance previews, selects and confirms changes at ${width}px`, async ({ page }) => {
+        const { transformSync } = await import('@swc/core');
+        const source = readFileSync('src/app/googDevice/client/MaintenancePanel.ts', 'utf8')
+            .replace("import { t } from '../../client/Language';", 'const t = (value: string): string => value;')
+            .replace('export class MaintenancePanel', 'class MaintenancePanel');
+        const code = transformSync(source, { jsc: { parser: { syntax: 'typescript' }, target: 'es2022' } }).code;
+        const actions: Record<string, unknown>[] = [];
+        const launcher = 'com.home.app/com.home.app.MainActivity';
+        const status = {
+            user: 0,
+            model: 'SHIELD',
+            manufacturer: 'NVIDIA',
+            sdk: '30',
+            googleTv: false,
+            home: launcher,
+            launchers: [launcher],
+            flagsAvailable: true,
+            components: [
+                {
+                    packageName: 'com.android.bluetooth',
+                    role: 'Bluetooth and remote control',
+                    protected: true,
+                    persistent: true,
+                },
+            ],
+            baselineAt: '2026-10-27T00:00:00Z',
+            before: null,
+            detox: { version: '1.5.6', installed: true },
+        };
+        await page.route('http://shield.test/api/manager/maintenance?serial=tv', async (route) => {
+            if (route.request().method() === 'GET') {
+                await route.fulfill({ json: status });
+                return;
+            }
+            const body = route.request().postDataJSON();
+            actions.push(body);
+            if (body.action === 'check')
+                await route.fulfill({
+                    json: {
+                        revision: status.baselineAt,
+                        steps: [
+                            { kind: 'disable', target: 'com.nvidia.stats', from: 'enabled', to: 'disabled' },
+                            { kind: 'setting', target: 'hdmi_cec', from: '0', to: '1' },
+                        ],
+                        skipped: [{ target: 'com.android.bluetooth', reason: 'Essential TV component' }],
+                    },
+                });
+            else if (body.action === 'home-test')
+                await route.fulfill({ json: { success: false, actual: 'com.other.app/.Main', restored: false } });
+            else if (body.action === 'repair')
+                await route.fulfill({
+                    json: {
+                        steps: [{ kind: 'setting', target: 'hdmi_cec', from: '0', to: '1', result: 'success' }],
+                        skipped: [],
+                    },
+                });
+            else await route.fulfill({ json: { success: true } });
+        });
+        await page.route('http://shield.test/', (route) =>
+            route.fulfill({
+                contentType: 'text/html',
+                body: '<html><body><main class="device-manager"><div id="panel"></div></main></body></html>',
+            }),
+        );
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto('http://shield.test/');
+        await page.addStyleTag({ content: readFileSync('src/style/device-manager.css', 'utf8') });
+        await page.addScriptTag({ content: `${code}\nnew MaintenancePanel(document.getElementById('panel'), 'tv');` });
+        await expect(page.getByRole('heading', { name: 'TV maintenance', exact: true })).toBeVisible();
+        expect(actions).toEqual([]);
+        await page.getByRole('button', { name: 'Check my configuration' }).click();
+        await expect(page.getByText('Skipped: com.android.bluetooth')).toBeVisible();
+        await page.getByRole('button', { name: 'Restore selected differences' }).click();
+        await expect(page.getByRole('status')).toContainText('Select differences');
+        expect(actions.map((a) => a.action)).toEqual(['check']);
+        await page.getByLabel('setting hdmi_cec:', { exact: false }).check();
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByRole('button', { name: 'Restore selected differences' }).click();
+        await expect(page.getByText('setting hdmi_cec: 0 → 1 — success')).toBeVisible();
+        expect(actions[1]).toMatchObject({ action: 'repair', selected: ['setting:hdmi_cec'], user: 0 });
+        page.once('dialog', (dialog) => dialog.dismiss());
+        await page.getByRole('button', { name: 'Test Home button', exact: true }).click();
+        expect(actions).toHaveLength(2);
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByRole('button', { name: 'Test Home button', exact: true }).click();
+        await expect(page.getByText('Home did not open the expected launcher.')).toBeVisible();
+        await page.getByLabel('Launcher applications in order').fill('com.netflix.ninja, com.plexapp.android');
+        await page.getByLabel('sound', { exact: true }).check();
+        await page.getByLabel('Clock format').selectOption('24');
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByRole('button', { name: 'Configure and open TV Detox' }).click();
+        await expect(page.getByText('Configuration sent. Check the layout on the TV.')).toBeVisible();
+        expect(actions.at(-1)).toMatchObject({
+            action: 'configure-detox',
+            apps: ['com.netflix.ninja', 'com.plexapp.android'],
+            quick: ['sound'],
+            clock: '24',
+        });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+}

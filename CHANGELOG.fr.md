@@ -7,6 +7,10 @@ Mise à jour des certificats et des composants TLS des images après l’inciden
 [Détails de l’incident](https://emudhra.we-have-a-problem.com/) · [TLS checks](security/emudhra/README.md)
 
 
+## 2026-10-27
+
+- Ajoute Maintenance TV : référence persistante avec restauration sélective des écarts, test réel du bouton Home, diagnostic de compatibilité et protections des composants TV essentiels/persistants, bilan avant/après contextualisé et installation/configuration facultative de TV Detox 1.5.6 vérifiée par SHA-256. Fonctions natives, sans exécuter les scripts du projet source.
+
 ## 2026-10-25
 
 - Ajoute le panneau Réglages (HDMI-CEC, fréquence d’images, appui long, animations, son surround, densité, launcher par défaut) avec restauration de l’origine, le nettoyage recommandé à valider, la réactivation groupée des applications désactivées par Shield Controller et les instantanés (enregistrement, aperçu des différences, application). Inspiré de bryanroscoe/shield_optimizer, sans reprise de code.

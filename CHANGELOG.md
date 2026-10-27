@@ -7,6 +7,10 @@ Update image trust stores and TLS components following the eMudhra incident. Che
 [Incident details](https://emudhra.we-have-a-problem.com/) · [TLS checks](security/emudhra/README.md)
 
 
+## 2026-10-27
+
+- Add TV maintenance: persistent references with selective drift repair, live Home button testing, compatibility diagnostics and essential/persistent TV component protections, contextual before/after measurements, and optional SHA-256-verified TV Detox 1.5.6 installation/configuration. Native features without executing upstream scripts.
+
 ## 2026-10-25
 
 - Add the Settings and tweaks panel (HDMI-CEC, frame rate, long-press, animations, surround sound, density, default launcher) with restore to original, confirmed recommended cleanup, bulk re-enable of apps disabled by Shield Controller, and snapshots (save, preview differences, apply). Inspired by bryanroscoe/shield_optimizer, without reusing its code.
