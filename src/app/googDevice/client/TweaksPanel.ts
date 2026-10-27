@@ -1,4 +1,5 @@
 import { t } from '../../client/Language';
+import { MaintenancePanel } from './MaintenancePanel';
 
 interface Tweak {
     id: string;
@@ -64,6 +65,7 @@ export const TWEAK_TEXT: Record<string, { name: string; help: string; labels?: R
 
 export class TweaksPanel {
     private disposed = false;
+    private maintenance?: MaintenancePanel;
     private pending = false;
     constructor(
         private readonly container: HTMLElement,
@@ -74,6 +76,7 @@ export class TweaksPanel {
     }
     dispose(): void {
         this.disposed = true;
+        this.maintenance?.dispose();
     }
     private async request(body?: unknown): Promise<Snapshot> {
         const response = await fetch(
@@ -155,6 +158,7 @@ export class TweaksPanel {
         return button;
     }
     private render(data: Snapshot): void {
+        this.maintenance?.dispose();
         this.container.replaceChildren();
         const heading = document.createElement('h2');
         heading.textContent = t('Settings and tweaks');
@@ -262,6 +266,9 @@ export class TweaksPanel {
         const dns = document.createElement('p');
         dns.textContent = t('Private DNS is in the DNS / IPv4 / IPv6 panel.');
         this.container.append(dns, this.snapshotSection(data.user));
+        const maintenance = document.createElement('section');
+        this.container.append(maintenance);
+        this.maintenance = new MaintenancePanel(maintenance, this.serial);
     }
     private async post(endpoint: string, body: unknown): Promise<any> {
         const response = await fetch(`/api/manager/${endpoint}?serial=${encodeURIComponent(this.serial)}`, {

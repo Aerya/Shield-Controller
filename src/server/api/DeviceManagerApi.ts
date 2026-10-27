@@ -15,6 +15,7 @@ import { DeviceOptimization, OptimizationError } from '../DeviceOptimization';
 import { DeviceSnapshot, SnapshotError } from '../DeviceSnapshot';
 import { DeviceTweaks, TweakError } from '../DeviceTweaks';
 import { isValidSerial, shArg } from '../security/deviceInput';
+import { MaintenanceError, TvMaintenance } from '../TvMaintenance';
 import { BodyTooLargeError, InvalidJsonError, readJsonBodyStrict } from './utils';
 
 export const MAX_APK_BYTES = 512 * 1024 * 1024;
@@ -57,8 +58,11 @@ function reply(res: ServerResponse, status: number, body: unknown): void {
 
 export class DeviceManagerApi {
     private readonly busy = new Set<string>();
+    private readonly mutationBusy = new Set<string>();
     private readonly internetBusy = new Set<string>();
     private readonly dnsBusy = new Set<string>();
+    private snapshotService?: DeviceSnapshot;
+    private maintenanceService?: TvMaintenance;
     constructor(
         private readonly adb = new AdbClient(Config.getInstance().adbPath),
         private optimizationService?: DeviceOptimization,
@@ -88,7 +92,21 @@ export class DeviceManagerApi {
     }
 
     private snapshot(): DeviceSnapshot {
-        return new DeviceSnapshot(this.adb, this.optimization(), this.tweaks());
+        this.snapshotService ??= new DeviceSnapshot(this.adb, this.optimization(), this.tweaks());
+        return this.snapshotService;
+    }
+
+    private maintenance(): TvMaintenance {
+        if (!this.maintenanceService) {
+            const config = Config.getInstance();
+            this.maintenanceService = new TvMaintenance(
+                this.adb,
+                this.snapshot(),
+                this.tweaks(),
+                join(config.dataRoot ?? dirname(config.dependenciesPath), 'maintenance'),
+            );
+        }
+        return this.maintenanceService;
     }
 
     async handle(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
@@ -100,13 +118,32 @@ export class DeviceManagerApi {
             reply(res, 400, { error: 'Invalid device identifier.' });
             return true;
         }
+        const mutation = req.method === 'POST';
+        if (mutation && this.mutationBusy.has(serial)) {
+            reply(res, 409, { error: 'A device management action is already running.' });
+            return true;
+        }
+        if (mutation) this.mutationBusy.add(serial);
+        let held = mutation;
+        const release = () => {
+            if (held) this.mutationBusy.delete(serial);
+            held = false;
+        };
+        // Responses may be sent before temporary APK cleanup finishes. A client receiving
+        // the result may immediately start its next operation; do not retain its lock.
+        res.once('finish', release);
         try {
             const device = (await this.adb.devices()).find((item) => item.serial === serial);
             if (device?.state !== 'device') {
                 reply(res, 409, { error: 'Device disconnected or awaiting authorization on the TV.' });
                 return true;
             }
-            if (req.method === 'GET' && url.pathname === '/api/manager/optimization') {
+            if (req.method === 'GET' && url.pathname === '/api/manager/maintenance') {
+                reply(res, 200, await this.maintenance().status(serial));
+            } else if (req.method === 'POST' && url.pathname === '/api/manager/maintenance') {
+                const body = await readJsonBodyStrict(req);
+                reply(res, 200, await this.maintenance().action(serial, body));
+            } else if (req.method === 'GET' && url.pathname === '/api/manager/optimization') {
                 reply(res, 200, await this.optimization().status(serial));
             } else if (req.method === 'POST' && url.pathname === '/api/manager/optimization') {
                 const body = await readJsonBodyStrict(req);
@@ -257,10 +294,13 @@ export class DeviceManagerApi {
                         error instanceof DnsInputError ||
                         error instanceof OptimizationError ||
                         error instanceof TweakError ||
-                        error instanceof SnapshotError
+                        error instanceof SnapshotError ||
+                        error instanceof MaintenanceError
                       ? 400
                       : 502;
             reply(res, status, { error: error instanceof Error ? error.message : 'Device operation failed.' });
+        } finally {
+            release();
         }
         return true;
     }
