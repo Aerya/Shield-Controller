@@ -4,93 +4,98 @@
   <img src="assets/branding/shield-controller-logo.png" alt="Shield Controller" width="180">
 </p>
 
-Manage your **NVIDIA Shield / Android TV** from a browser. Self-hosted with Docker.
+Gérez votre **NVIDIA Shield / Android TV** depuis un navigateur. Auto-hébergé avec Docker.
 
-[Français](README.fr.md)
+[🇬🇧 English](README.en.md)
 
-### TLS security — October 2026
+### Sécurité TLS — octobre 2026
 
-Update image trust stores and TLS components following the eMudhra incident. Checks cover the compromised chains, including both No CT cases, and a valid HTTPS connection. Running images remain unchanged: schedule their replacement after validation.
+Mise à jour des certificats et des composants TLS des images après l’incident eMudhra. Les contrôles couvrent les chaînes compromises, dont les deux cas « No CT », et une connexion HTTPS valide. Une image déjà en cours d’exécution reste inchangée : son remplacement doit être planifié après validation.
 
-[Incident details](https://emudhra.we-have-a-problem.com/) · [TLS checks](security/emudhra/README.md)
+[Détails de l’incident](https://emudhra.we-have-a-problem.com/) · [TLS checks](security/emudhra/README.md)
 
-## Features
+## Fonctions
 
-- Screen preview and remote control: D-pad, keyboard and text input
-- Detailed information: Android, hardware, RAM, storage, network and display
-- Drag-and-drop APK installation with upload progress and Android error messages
-- Application list with search, user/system/disabled filters and uninstall confirmation
-- Remembered devices reconnect automatically at startup
-- File browser, transfers and ADB terminal
-- French/English interface with tool panels to the right of the device
-- PNG screenshots with preview and download, including over LAN HTTP
-- Automatic public IP and IPv4/IPv6 DNS detection with provider names, domain tests and Android Private DNS
-- HDMI-CEC, frame rate, long-press, animation, surround sound, display density and default launcher settings, with restore to original
-- Confirmed recommended cleanup, bulk re-enable, and snapshots to roll back or copy a setup
-- CPU, RAM, storage, available temperatures, Android-declared home and foreground application monitoring (optional refresh every 5 seconds).
+- Aperçu de l’écran et télécommande : pavé directionnel, clavier et saisie de texte
+- Informations détaillées : Android, matériel, RAM, stockage, réseau et affichage
+- Installation d’APK par glisser-déposer, progression du transfert et erreurs Android
+- Liste des applications avec recherche, filtres utilisateur/système/désactivées et confirmation de désinstallation
+- Reconnexion automatique des appareils mémorisés au démarrage
+- Explorateur de fichiers, transferts et terminal ADB
+- Interface FR/EN, panneaux d’outils à droite de l’appareil
+- Captures d’écran PNG avec aperçu et téléchargement, y compris en HTTP sur le LAN
+- Détection automatique des IP publiques et DNS IPv4/IPv6 avec nom du fournisseur, test d’un domaine et DNS privé Android
+- Réglages HDMI-CEC, fréquence d’images, appui long, animations, son surround, densité d’affichage et launcher par défaut, avec restauration de l’origine
+- Nettoyage recommandé à valider, réactivation groupée et instantanés pour revenir en arrière ou copier une configuration
+- Suivi CPU, RAM, stockage, températures disponibles, accueil déclaré par Android et application au premier plan (actualisation facultative toutes les 5 secondes)
+- Configuration de référence persistante, détection des écarts après mise à jour et restauration sélective
+- Test réel du bouton Home avec restauration facultative du launcher d’origine enregistré
+- Diagnostic de compatibilité Google TV et constructeur, avec protection des composants essentiels connus et persistants
+- Mesures RAM et CPU avant/après, avec durée depuis le démarrage et signalement des redémarrages
+- Installation et configuration facultatives du launcher TV Detox, avec vérification SHA-256
 
-## Screenshots
+## Captures d’écran
 
 | | |
 | --- | --- |
-| **Remote control and text pasting**<br>[![Remote control and text pasting](assets/screenshots/remote-control.png)](assets/screenshots/remote-control.png) | **Overview and network discovery**<br>[![Overview and network discovery](assets/screenshots/overview.png)](assets/screenshots/overview.png) |
-| **ADB terminal**<br>[![ADB terminal](assets/screenshots/terminal.png)](assets/screenshots/terminal.png) | **File browser**<br>[![File browser](assets/screenshots/files.png)](assets/screenshots/files.png) |
-| **Public IPs and IPv4/IPv6 DNS**<br>[![Public IPs and IPv4/IPv6 DNS](assets/screenshots/dns.png)](assets/screenshots/dns.png) | **Applications and APK installation**<br>[![Applications and APK installation](assets/screenshots/applications.png)](assets/screenshots/applications.png) |
-| **Stream settings**<br>[![Stream settings](assets/screenshots/stream-settings.png)](assets/screenshots/stream-settings.png) | **Screenshot preview**<br>[![Screenshot preview](assets/screenshots/screenshot.png)](assets/screenshots/screenshot.png) |
+| **Télécommande et collage de texte**<br>[![Télécommande et collage de texte](assets/screenshots/remote-control.png)](assets/screenshots/remote-control.png) | **Accueil et découverte réseau**<br>[![Accueil et découverte réseau](assets/screenshots/overview.png)](assets/screenshots/overview.png) |
+| **Terminal ADB**<br>[![Terminal ADB](assets/screenshots/terminal.png)](assets/screenshots/terminal.png) | **Explorateur de fichiers**<br>[![Explorateur de fichiers](assets/screenshots/files.png)](assets/screenshots/files.png) |
+| **IP publiques et DNS IPv4/IPv6**<br>[![IP publiques et DNS IPv4/IPv6](assets/screenshots/dns.png)](assets/screenshots/dns.png) | **Applications et installation d’APK**<br>[![Applications et installation d’APK](assets/screenshots/applications.png)](assets/screenshots/applications.png) |
+| **Configuration du flux**<br>[![Configuration du flux](assets/screenshots/stream-settings.png)](assets/screenshots/stream-settings.png) | **Capture d’écran avec aperçu**<br>[![Capture d’écran avec aperçu](assets/screenshots/screenshot.png)](assets/screenshots/screenshot.png) |
 
-## Optimization
+## Optimisation
 
-The panel opens in **Everyday optimization**: telemetry, diagnostics, Plex, user apps, and disabled or protected apps. **Advanced — all applications** exposes the full inventory without removing any option. Dedicated filters also show system components, user apps and protected apps. Apps whose system status is unknown remain visible in the default view.
+Le panneau s’ouvre sur **Optimisation courante** : télémétrie, diagnostic, Plex, applications utilisateur et applications désactivées ou protégées. **Avancé — toutes les applications** donne accès à l’inventaire complet, sans retirer aucune option. Des filtres dédiés affichent aussi les composants système, les applications utilisateur et les protections. Si le statut système est inconnu, l’application reste visible dans la vue courante.
 
-Known apps have readable names and explanations of their purpose and the consequences of disabling them. This information comes from a curated catalog, not APK label extraction. Unknown packages are explicitly identified as such; their technical identifiers remain visible and searchable. Search matches translated names, package identifiers and explanations within the selected view. Lists use 12 apps per page with a counter, grouped actions, and diagnostics and protection information above the list on desktop and mobile.
+Les applications connues présentent un nom lisible et une explication de leur rôle et des conséquences d’une désactivation. Ces informations viennent d’un catalogue, pas de l’extraction des libellés des APK. Les paquets inconnus sont explicitement signalés ; leur identifiant technique reste affiché et recherchable. La recherche porte sur le nom traduit, l’identifiant et l’explication, dans la vue sélectionnée. La liste est paginée par 12 applications, avec compteur ; les boutons restent regroupés et le diagnostic ainsi que les protections apparaissent avant la liste, sur ordinateur comme sur mobile.
 
-The **Optimization** panel lists apps for the active Android user, a process CPU snapshot, memory and storage. A snapshot does not establish that an app slows down boot.
+Le panneau **Optimisation** affiche les applications de l’utilisateur Android actif, un relevé CPU des processus, la mémoire et le stockage. Un relevé ponctuel ne prouve pas qu’une application ralentit le démarrage.
 
-Individual actions are **Disable**, **Enable**, **Protect**, and **Remove manual protection**. Disabling preserves data but stops the app’s functions and services until enabled again. Filters distinguish NVIDIA/Google telemetry and feedback, NVIDIA diagnostics, the local Plex server (`com.plexapp.mediaserver.smb`) and Plex player (`com.plexapp.android`). Plex database maintenance and Scrob are out of scope.
+Les actions individuelles sont : **Désactiver**, **Réactiver**, **Protéger** et **Retirer la protection manuelle**. La désactivation conserve les données ; les fonctions et services de l’application cessent jusqu’à sa réactivation. Les filtres distinguent télémétrie/rapports NVIDIA et Google, diagnostic NVIDIA, serveur Plex local (`com.plexapp.mediaserver.smb`) et lecteur Plex (`com.plexapp.android`). Aucune optimisation de base Plex ou Scrob.
 
-Before each disable (and in the existing uninstall API), the server checks the resolved home launcher, foreground app and published media sessions (including paused sessions). **Protect** your usual player to keep it protected when closed or when it does not publish a media session. Nothing is disabled without your confirmation. If Android cannot provide reliable protection information, disabling requires a fresh valid diagnostic; enabling remains available.
+Le launcher résolu par Android, l’application au premier plan et les paquets ayant une session multimédia publiée (y compris en pause) sont protégés côté serveur avant chaque désactivation, ainsi que dans l’API de désinstallation existante. Utilisez **Protéger** sur votre lecteur habituel pour conserver sa protection lorsqu’il est fermé ou ne publie pas de session. Rien n’est désactivé sans votre validation. Si Android ne permet pas de vérifier les protections, la désactivation attend un diagnostic valide ; la réactivation reste disponible.
 
-Persistent history retains the last 200 attempts per device and Android user under the server data directory (`optimization/`), including time, action and result. A pending entry may have been interrupted: refresh the actual device state before retrying. Enable apps again using the disabled apps filter. Detection cannot guarantee protection against a simultaneous app switch on the TV.
+L’historique persistant conserve les 200 dernières tentatives par appareil et utilisateur dans le répertoire de données du serveur (`optimization/`), avec date, action et résultat. Une tentative « En attente » peut avoir été interrompue : actualisez l’état réel avant de réessayer. La réactivation est accessible dans le filtre des applications désactivées. La détection n’est pas une garantie contre un changement d’application simultané sur la TV.
 
-**Recommended cleanup** offers a short list maintained by Shield Controller. NVIDIA/Google telemetry and feedback are preselected. Optional items (NVIDIA diagnostics, home-screen recommendations, local Plex server, preinstalled apps) are unticked. Apps already disabled or protected are not shown. After confirmation, each app goes through the same protections and checks as an individual disable. Only packages from this list can be disabled in a batch.
+**Nettoyage recommandé** propose une courte liste propre à Shield Controller. La télémétrie et les rapports NVIDIA/Google sont présélectionnés. Les éléments facultatifs (diagnostic NVIDIA, recommandations de l’accueil, serveur Plex local, applications préinstallées) sont décochés. Les applications déjà désactivées ou protégées n’apparaissent pas. Après confirmation, chaque application passe par les mêmes protections et vérifications qu’une désactivation individuelle. Seuls les paquets de cette liste peuvent être désactivés en lot.
 
-**Re-enable apps disabled here** undoes, in one go, the disables made by Shield Controller according to its history. Packages disabled by the firmware itself are left alone; the result lists any re-enable Android refused.
+**Réactiver les applications désactivées ici** annule en une fois les désactivations faites par Shield Controller, d’après l’historique. Les applications désactivées d’origine par le firmware ne sont pas touchées ; le résultat indique les réactivations refusées par Android.
 
-## Settings and tweaks
+## Réglages
 
-The **Settings and tweaks** panel changes documented Android settings, each limited to an allowlist of values and verified after writing:
+Le panneau **Réglages** modifie des paramètres Android documentés, chacun limité à une liste de valeurs autorisées et vérifié après écriture :
 
-- HDMI-CEC, turning the TV on and off with the Shield
-- Match content frame rate (Android 12+; on the Shield, use the NVIDIA setting in the TV menu)
-- Remote long-press delay
-- Animation scales (window, transition, duration)
-- Surround sound output (automatic, never, always, manual)
-- Display scaling (density from 160 to 640 dpi, resettable)
-- Default launcher among installed home screens
+- HDMI-CEC, allumage et mise en veille de la TV avec la Shield
+- Adaptation de la fréquence d’images au contenu (Android 12 et plus ; sur la Shield, réglage NVIDIA dans le menu de la TV)
+- Délai d’appui long de la télécommande
+- Échelles d’animation (fenêtres, transitions, durée)
+- Sortie son surround (automatique, jamais, toujours, manuel)
+- Mise à l’échelle de l’affichage (densité de 160 à 640 dpi, réinitialisable)
+- Launcher par défaut parmi les écrans d’accueil installés
 
-The value seen before the first change is kept on the server (`tweaks/`): **Restore original** puts it back. Settings unavailable on the device’s Android version are greyed out. Private DNS stays in the DNS panel.
+La valeur relevée avant la première modification est conservée sur le serveur (`tweaks/`) : **Restaurer l’origine** la remet en place. Les réglages indisponibles sur la version d’Android de l’appareil sont grisés. Le DNS privé reste dans le panneau DNS.
 
-### Snapshots
+### Instantanés
 
-**Save snapshot** downloads a JSON file with each app’s enabled/disabled state, the settings above, density and launcher. **Load snapshot** first shows the differences with the device, then **Apply snapshot** applies them. On the same device this rolls back; on another one it copies the setup.
+**Enregistrer un instantané** télécharge un fichier JSON contenant l’état activé/désactivé de chaque application, les réglages ci-dessus, la densité et le launcher. **Charger un instantané** affiche d’abord les différences avec l’appareil, puis **Appliquer l’instantané** les applique. Sur le même appareil, cela permet de revenir en arrière ; sur un autre, de copier la configuration.
 
-The launcher changes first, then re-enables, settings, density and finally disables. Protections still apply. Missing apps, unavailable settings and “Android default” values are skipped and listed. Each step’s result is shown; a refused step does not stop the others.
+Le launcher est changé en premier, puis viennent les réactivations, les réglages, la densité et enfin les désactivations. Les protections restent actives. Les applications absentes, les réglages indisponibles et les valeurs « Android par défaut » sont ignorés et listés. Le résultat de chaque étape est affiché ; une étape refusée n’arrête pas les suivantes.
 
-### TV maintenance
+### Maintenance TV
 
-In **Settings and tweaks → TV maintenance**:
+Dans **Réglages et ajustements → Maintenance TV** :
 
-- **Save reference configuration**, then **Check my configuration** after an update: differences are displayed without changing the TV. Select the desired changes and confirm **Restore selected differences**. Protections still apply and skipped items remain visible. References persist on the server under `maintenance/`, per device (ADB identifier) and Android user, independently of downloadable JSON snapshots. A different ADB address creates a separate reference. Unrestorable “Android default” settings are reported as skipped.
-- **Test Home button** explicitly opens Settings and presses Home after confirmation. Select the expected launcher; the report shows the observed application. Restoring the original launcher on failure is optional and requires an original recorded by Shield Controller. Unrecognized vendor routing is reported as unverified; no launcher is disabled and no reboot is performed. This interrupts the current TV screen.
-- **Compatibility** identifies Google TV and known TV components (HDMI, remote, setup, Cast, screensaver…). Known essential components and packages marked `PERSISTENT` are protected against disabling and uninstalling. The catalog is not exhaustive; unknown applications are not declared safe to disable. Keep the screensaver enabled on OLED displays.
-- **Measure before / Measure after** compares available RAM, a one-second CPU sample and uptime. The before measurement persists. A different or unknown boot is explicitly reported: these figures do not prove a speed improvement. Use comparable workloads.
-- **Install TV Detox** optionally installs the TV Detox Android launcher, pinned to **1.5.6**, downloaded from its official release and verified by SHA-256. Installation is limited to Android user 0, keeps the stock launcher enabled and never uninstalls an existing app on a signature conflict. The server needs outbound Internet access to GitHub. Once installed, configure application order (package identifiers), Bluetooth/sound/picture shortcuts and clock format, then open the launcher from this panel. Sending configuration replaces these options; the panel does not read the launcher's internal preferences. Shortcut availability depends on firmware. To select it as Home, refresh **Settings and tweaks**, choose **Default launcher** and test Home. Google TV may keep opening its stock home screen; Shield Controller does not force replacement by disabling it.
+- **Enregistrer la configuration de référence**, puis **Vérifier ma configuration** après une mise à jour : les écarts sont affichés sans modifier la TV. Cochez les changements voulus puis confirmez **Restaurer les écarts sélectionnés**. Les protections restent actives et les éléments non applicables sont signalés. La référence est conservée sur le serveur dans `maintenance/`, par appareil (identifiant ADB) et utilisateur Android ; elle reste distincte des snapshots JSON exportables. Une adresse ADB différente crée une autre référence. Les valeurs « défaut Android » non restaurables restent signalées comme ignorées.
+- **Tester le bouton Home** ouvre réellement les paramètres puis appuie sur Home, après confirmation. Choisissez le lanceur attendu ; le résultat indique l’application observée. Le retour au lanceur d’origine est facultatif et disponible si Shield Controller l’avait enregistré. Un routage constructeur non reconnu est signalé comme non vérifié ; aucun lanceur n’est désactivé et aucun redémarrage n’est lancé. Le test interrompt l’écran en cours.
+- **Compatibilité** distingue Google TV et les composants TV connus (HDMI, télécommande, configuration initiale, Cast, économiseur d’écran…). Les composants essentiels connus et les paquets marqués `PERSISTENT` sont protégés contre la désactivation et la désinstallation. Le catalogue n’est pas exhaustif ; une application inconnue n’est pas déclarée sûre à désactiver. Conservez l’économiseur d’écran sur une dalle OLED.
+- **Mesurer avant / Mesurer après** compare RAM disponible, CPU échantillonné pendant une seconde et durée depuis le démarrage. La mesure initiale est persistante. Un démarrage différent ou inconnu est explicitement signalé : les chiffres ne prouvent pas un gain de vitesse. Utilisez des conditions de charge similaires.
+- **Installer TV Detox** propose facultativement le launcher Android TV Detox, version **1.5.6**, téléchargé depuis sa release officielle et vérifié par SHA-256. L’installation est réservée à l’utilisateur Android 0 ; elle conserve le launcher constructeur et ne désinstalle rien en cas de conflit de signature. Elle nécessite un accès Internet sortant du serveur vers GitHub. Une fois installé, configurez l’ordre des applications (identifiants de paquets), les raccourcis Bluetooth/son/image et l’horloge, puis ouvrez le launcher depuis ce panneau. La configuration envoyée remplace ces options ; ce panneau ne relit pas les préférences internes du launcher. Les raccourcis disponibles dépendent du firmware. Pour le choisir comme accueil, actualisez **Réglages et ajustements**, puis utilisez **Lanceur par défaut** et testez Home. Sur Google TV, le launcher constructeur peut continuer à ouvrir l’accueil ; Shield Controller ne force pas son remplacement en le désactivant.
 
-These features are implemented natively in Shield Controller. No external `install.sh`, `check.sh` or cleanup script is executed. Only the optional launcher is a separate Android application. Installation does not guarantee compatibility with every model. Automated validation uses simulated ADB responses; firmware-specific behavior still needs verification on the device.
+Ces fonctions sont intégrées nativement à Shield Controller. Aucun script `install.sh`, `check.sh` ou de nettoyage externe n’est exécuté. Seul le launcher facultatif est une application Android distincte. L’installation ne garantit pas sa compatibilité avec tous les modèles. La validation automatisée utilise des réponses ADB simulées ; les comportements propres au firmware doivent être vérifiés sur l’appareil.
 
 ## Docker
 
-For **Linux amd64**, use this Compose file in Dockge or with `docker compose up -d`:
+Sur **Linux amd64**, ajoutez cette stack dans Dockge ou lancez `docker compose up -d` :
 
 ```yaml
 services:
@@ -105,40 +110,40 @@ services:
       - ./data:/data
 ```
 
-Open **http://SERVER_IP:8123** on your LAN. **View / Control** works over HTTP: refreshed screen preview, remote control, pasting and text input. The inherited continuous video stream requires a secure browser context. The variable above grants administrative access to anyone able to reach the service; sign-in is available in Settings → Users.
+Ouvrez **http://IP_DU_SERVEUR:8123** sur votre LAN. **Voir / Piloter** fonctionne en HTTP : aperçu par images actualisées, télécommande, collage et saisie de texte. Le flux vidéo continu hérité nécessite un contexte sécurisé du navigateur. La variable ci-dessus donne les droits d’administration à toute personne pouvant accéder au service ; l’authentification se configure dans Paramètres → Utilisateurs.
 
-Build locally: `docker build -t shield-controller:local .`
+Compilation locale : `docker build -t shield-controller:local .`
 
-## Connect your Shield
+## Connecter la Shield
 
-1. Enable developer options: **Settings → Device Preferences → About → press Build 7 times**.
-2. Enable **Network debugging** and note the Shield's IP address.
-3. Add `SHIELD_IP:5555` in the WebUI and accept the authorization prompt on the TV.
-4. Use **device info** or **applications / APK** on the device card.
+1. Activez les options développeur : **Paramètres → Préférences de l’appareil → À propos → appuyez 7 fois sur Build**.
+2. Activez le **débogage réseau** et relevez l’adresse IP de la Shield.
+3. Ajoutez `IP_SHIELD:5555` dans la WebUI et acceptez l’autorisation sur la télévision.
+4. Ouvrez **Informations** ou **Applications / APK** sur la carte de l’appareil.
 
-Ethernet and Wi-Fi both work. No router port forwarding is needed.
+Ethernet et Wi-Fi fonctionnent. Aucune redirection de port sur la box n’est nécessaire.
 
-## Remote control and text
+## Piloter et coller du texte
 
-Open **View / Control**, select the TV input field with the remote, paste your URL/username in the text box, then click **Paste on Shield**. If the app blocks pasting, try **Type text directly** (300 bytes maximum; non-Latin characters are limited). Shield Controller does not store the text; pasting uses Android’s clipboard. The HTTP preview updates about every 1.5 seconds plus capture time, without audio.
+Ouvrez **Voir / Piloter**, sélectionnez le champ sur la TV avec la télécommande, collez votre URL/identifiant dans la zone de texte, puis cliquez sur **Coller sur la Shield**. Si l’application refuse, essayez **Saisir directement** (300 octets maximum, caractères non latins limités). Le texte n’est pas conservé par Shield Controller ; le collage utilise le presse-papiers Android. L’aperçu est actualisé environ toutes les 1,5 secondes plus le temps de capture, sans audio.
 
-## Notes
+## À savoir
 
-Single `.apk` files only, up to **512 MiB each**; split bundles (`.apks`, `.xapk`) are unsupported. Installs update existing apps when Android permits it. Uninstall targets **Android user 0**; removing system apps can break TV functions. App names are shown as package identifiers. Some device details may be unavailable without root. Protected video may appear black in screen mirroring.
+Fichiers `.apk` simples uniquement, **512 Mio maximum chacun** ; les bundles (`.apks`, `.xapk`) ne sont pas pris en charge. L’installation met à jour les applications existantes si Android l’autorise. La désinstallation concerne **l’utilisateur Android 0** ; retirer une application système peut perturber la TV. Les applications sont affichées par leur identifiant de paquet. Certaines informations nécessitent le root. Les vidéos protégées peuvent rester noires dans le miroir d’écran.
 
 ## DNS
 
-Each resolver IP includes its known DNS service or network operator (RIPEstat); unavailable identification never hides the result.
+Le nom du service DNS connu ou de l’opérateur réseau (RIPEstat) accompagne chaque IP ; une identification indisponible ne bloque pas le résultat.
 
-Without a custom server, the test runs on the Shield. With an IPv4/IPv6 DNS address, it runs from the Shield Controller server. Private DNS uses a **provider hostname** (DNS-over-TLS). On an unrooted Android 11 Shield, change Ethernet DNS in the TV network settings or DHCP.
+Sans serveur personnalisé, le test s’exécute sur la Shield. Avec une IP DNS IPv4/IPv6, il s’exécute depuis le serveur Shield Controller. Le DNS privé utilise un **nom d’hôte de fournisseur** (DNS-over-TLS). Sur la Shield Android 11 sans root, les DNS Ethernet se changent dans les paramètres réseau de la TV ou du DHCP, pas par ADB.
 
-Opening the DNS panel automatically detects public IPs and DNS resolvers through [IPleak.net](https://ipleak.net/) from the Shield. It reports observed recursive resolvers, without reading AdGuard Home or listing root servers. Per-app VPN routing may differ.
+À l’ouverture du panneau DNS, la détection automatique des IP publiques et résolveurs interroge [IPleak.net](https://ipleak.net/) depuis la Shield. Elle affiche les résolveurs récursifs observés, sans lire AdGuard Home ni lister les serveurs racine. Un VPN par application peut emprunter un autre chemin.
 
-## Credits & license
+## Crédits et licence
 
-- **[Ansub/tv-detox](https://github.com/Ansub/tv-detox)** — inspiration for TV maintenance and provider of the optional Android launcher, under the [MIT license](https://github.com/Ansub/tv-detox/blob/main/LICENSE). Maintenance workflows and compatibility checks are implemented natively; no upstream shell scripts or Java source are incorporated. The APK is downloaded on request, not bundled.
-- **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)** — base project, with device management additions by Aerya.
-- **[bryanroscoe/shield_optimizer](https://github.com/bryanroscoe/shield_optimizer)** (ATV Optimizer) — inspiration for settings, recommended cleanup, bulk re-enable and snapshots. Its author forbids using its code: no code or lists are taken from it; the features were rewritten from public Android commands.
-- **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)** — screen mirroring.
+- **[Ansub/tv-detox](https://github.com/Ansub/tv-detox)** — inspiration pour la maintenance TV et fournisseur du launcher Android facultatif, sous [licence MIT](https://github.com/Ansub/tv-detox/blob/main/LICENSE). Les fonctions de maintenance et les contrôles de compatibilité sont implémentés nativement ; aucun script shell ni code Java du projet n’est intégré. L’APK est téléchargé sur demande, sans être inclus dans la distribution.
+- **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)** — projet de base, avec des ajouts de gestion des appareils par Aerya.
+- **[bryanroscoe/shield_optimizer](https://github.com/bryanroscoe/shield_optimizer)** (ATV Optimizer) — inspiration pour les réglages, le nettoyage recommandé, la réactivation groupée et les instantanés. Son auteur interdit l’utilisation de son code : aucune ligne de code ni aucune liste n’en est reprise ; les fonctions ont été réécrites à partir des commandes Android publiques.
+- **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)** — miroir d’écran.
 
-**GPL-3.0-only** — see [LICENSE](LICENSE). Upstream copyright notices are preserved.
+**GPL-3.0-only** — voir [LICENSE](LICENSE). Les mentions de copyright d’origine sont conservées.
