@@ -10,6 +10,7 @@ permissions:
 jobs:
   validation:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -26,6 +27,15 @@ jobs:
           npm exec --yes --package=node-gyp@13.1.0 -- node-gyp rebuild --directory node_modules/node-pty
           node -e "require('node-pty')"
       - run: npm test -- --maxWorkers=4
-      - run: npx playwright install --with-deps chromium firefox
+      - name: Installer les navigateurs et dépendances Playwright
+        timeout-minutes: 8
+        run: |
+          # Avoid the Azure Ubuntu mirror, observed downloading at about 45 KiB/s.
+          for source in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|https://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source"
+            fi
+          done
+          npx playwright install --with-deps chromium firefox
       - run: npm run test:layout
       - run: npm run build
