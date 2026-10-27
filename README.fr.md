@@ -27,7 +27,12 @@ Mise à jour des certificats et des composants TLS des images après l’inciden
 - Détection automatique des IP publiques et DNS IPv4/IPv6 avec nom du fournisseur, test d’un domaine et DNS privé Android
 - Réglages HDMI-CEC, fréquence d’images, appui long, animations, son surround, densité d’affichage et launcher par défaut, avec restauration de l’origine
 - Nettoyage recommandé à valider, réactivation groupée et instantanés pour revenir en arrière ou copier une configuration
-- Suivi CPU, RAM, stockage, températures disponibles, accueil déclaré par Android et application au premier plan (actualisation facultative toutes les 5 secondes).
+- Suivi CPU, RAM, stockage, températures disponibles, accueil déclaré par Android et application au premier plan (actualisation facultative toutes les 5 secondes)
+- Configuration de référence persistante, détection des écarts après mise à jour et restauration sélective
+- Test réel du bouton Home avec restauration facultative du launcher d’origine enregistré
+- Diagnostic de compatibilité Google TV et constructeur, avec protection des composants essentiels connus et persistants
+- Mesures RAM et CPU avant/après, avec durée depuis le démarrage et signalement des redémarrages
+- Installation et configuration facultatives du launcher TV Detox, avec vérification SHA-256
 
 ## Captures d’écran
 

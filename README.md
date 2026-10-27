@@ -27,7 +27,12 @@ Update image trust stores and TLS components following the eMudhra incident. Che
 - Automatic public IP and IPv4/IPv6 DNS detection with provider names, domain tests and Android Private DNS
 - HDMI-CEC, frame rate, long-press, animation, surround sound, display density and default launcher settings, with restore to original
 - Confirmed recommended cleanup, bulk re-enable, and snapshots to roll back or copy a setup
-- CPU, RAM, storage, available temperatures, Android-declared home and foreground application monitoring (optional refresh every 5 seconds).
+- CPU, RAM, storage, available temperatures, Android-declared home and foreground application monitoring (optional refresh every 5 seconds)
+- Persistent reference configuration with drift detection and selective restoration after updates
+- Live Home button test with optional restoration of the recorded original launcher
+- Google TV and vendor compatibility diagnostics, with protection for known essential and persistent components
+- Before/after RAM and CPU measurements with uptime and reboot context
+- Optional installation and configuration of the TV Detox launcher, with SHA-256 verification
 
 ## Screenshots
 
