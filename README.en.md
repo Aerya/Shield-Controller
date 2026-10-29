@@ -34,6 +34,11 @@ Update image trust stores and TLS components following the eMudhra incident. Che
 - Before/after RAM and CPU measurements with uptime and reboot context
 - Optional installation and configuration of the TV Detox launcher, with SHA-256 verification
 
+- Privacy audit with Android evidence, ACR/voice/telemetry components and JSON export
+- Shield model profiles and additional protections for remote control, audio and firmware updates
+- Launcher benchmark: cold start, return Home, janky frames and PSS memory, with persistent comparison
+- Optional CleanYourTV launcher, built from a pinned revision and bundled with SHA-256 verification
+
 ## Screenshots
 
 | | |
@@ -93,6 +98,19 @@ In **Settings and tweaks → TV maintenance**:
 
 These features are implemented natively in Shield Controller. No external `install.sh`, `check.sh` or cleanup script is executed. Only the optional launcher is a separate Android application. Installation does not guarantee compatibility with every model. Automated validation uses simulated ADB responses; firmware-specific behavior still needs verification on the device.
 
+### Privacy, model profiles and benchmark
+
+In **Settings and tweaks → TV maintenance**:
+
+- **Audit privacy** inspects up to 25 known or candidate components: voice assistants, automatic content recognition (ACR), and telemetry. Reports distinguish known roles, Android-selected voice services, declared microphone permissions and accesses in the available AppOps history. Name matches remain unverified; shared system UIDs prevent attribution to an individual app. “Unknown” does not mean “no access”. The audit changes nothing, respects the active Android user and supports JSON export.
+- **Model profile** recognizes Shield 2017, 2019 tube and Pro 2019 identifiers, plus the 2015/2017 family. Advice depends on firmware. TV recommendations are now protected because NVIDIA's phone remote may depend on them after reboot. Known NVIDIA pairing, audio, settings and update services are protected too. No community bulk-disable list is applied.
+- **Benchmark launcher** requires confirmation: opens Settings, returns Home, moves focus with six directional keys, then stops and restarts the launcher for a cold-start measurement. Reports include Android launch/return timings, rendered/janky frame counter differences and PSS memory. This does not measure physical remote latency. Missing or unreliable values remain unavailable. The last result persists per device/user on the server for before/after comparisons, with JSON export. Use similar workloads and comparable conditions. This action interrupts the current screen.
+- **Install CleanYourTV**, optional, installs APK **3.1**, built from pinned revision `fcde1eedb4d6cc5ab683a6e0e9e1bc79229b898e` and included in the Docker distribution. SHA-256 is checked before installation. Requires Android **8+** and Android user **0**. **Open CleanYourTV** opens its interface; appearance, dock, app order and modules are configured on the TV. External themes remain managed through the launcher's tools. Select the default launcher in existing settings and test Home afterwards. Installation never disables the stock launcher or uninstalls an app to resolve a signature conflict. This APK is a build made for this project, not an official upstream binary release.
+
+Outside Docker, keep `assets/launchers/` in the working directory. `scripts/build-clean-launcher.sh` rebuilds the APK with Docker (JDK 17, SDK 34), runs its tests and Android Lint, then prints the SHA-256 to update in `CleanLauncher.ts`. The private `shield-clean-gradle` volume preserves the signing key: a different key may prevent updating an existing installation. Rebuilding does not contact a TV. Shield Controller runs no external cleanup or device-installation scripts.
+
+Integration tests use simulated ADB responses; they do not replace validation on your TV's firmware.
+
 ## Docker
 
 For **Linux amd64**, use this Compose file in Dockge or with `docker compose up -d`:
@@ -144,6 +162,7 @@ Opening the DNS panel automatically detects public IPs and DNS resolvers through
 - **[Ansub/tv-detox](https://github.com/Ansub/tv-detox)** — inspiration for TV maintenance and provider of the optional Android launcher, under the [MIT license](https://github.com/Ansub/tv-detox/blob/main/LICENSE). Maintenance workflows and compatibility checks are implemented natively; no upstream shell scripts or Java source are incorporated. The APK is downloaded on request, not bundled.
 - **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)** — base project, with device management additions by Aerya.
 - **[bryanroscoe/shield_optimizer](https://github.com/bryanroscoe/shield_optimizer)** (ATV Optimizer) — inspiration for settings, recommended cleanup, bulk re-enable and snapshots. Its author forbids using its code: no code or lists are taken from it; the features were rewritten from public Android commands.
+- **[Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv)** — inspiration for the natively reimplemented audit, profiles and benchmark; source of the optional compiled launcher. [MIT license and copyright](assets/launchers/LICENSE-MIT.txt); Outfit font under the [SIL Open Font License](assets/launchers/LICENSE-OFL.txt). Notices accompany the APK.
 - **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)** — screen mirroring.
 
 **GPL-3.0-only** — see [LICENSE](LICENSE). Upstream copyright notices are preserved.

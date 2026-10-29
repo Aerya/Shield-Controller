@@ -34,6 +34,11 @@ Mise à jour des certificats et des composants TLS des images après l’inciden
 - Mesures RAM et CPU avant/après, avec durée depuis le démarrage et signalement des redémarrages
 - Installation et configuration facultatives du launcher TV Detox, avec vérification SHA-256
 
+- Audit de confidentialité avec preuves Android, composants ACR/voix/télémétrie et export JSON
+- Profils des modèles Shield et protections supplémentaires pour la télécommande, l’audio et les mises à jour
+- Benchmark du launcher : démarrage à froid, retour à Home, images saccadées et mémoire PSS, avec comparaison persistante
+- Launcher CleanYourTV facultatif, compilé depuis une révision fixe et inclus, avec contrôle SHA-256
+
 ## Captures d’écran
 
 | | |
@@ -93,6 +98,19 @@ Dans **Réglages et ajustements → Maintenance TV** :
 
 Ces fonctions sont intégrées nativement à Shield Controller. Aucun script `install.sh`, `check.sh` ou de nettoyage externe n’est exécuté. Seul le launcher facultatif est une application Android distincte. L’installation ne garantit pas sa compatibilité avec tous les modèles. La validation automatisée utilise des réponses ADB simulées ; les comportements propres au firmware doivent être vérifiés sur l’appareil.
 
+### Confidentialité, profils et benchmark
+
+Dans **Réglages et ajustements → Maintenance TV** :
+
+- **Auditer la confidentialité** examine au maximum 25 composants connus ou candidats : assistants vocaux, reconnaissance du contenu affiché (ACR), télémétrie. Le rapport distingue le rôle connu, le service vocal choisi par Android, la permission microphone déclarée et les accès présents dans l’historique AppOps disponible. Une correspondance de nom reste non vérifiée ; un identifiant système partagé empêche l’attribution à une application. « Inconnu » ne signifie pas « aucun accès ». L’audit ne désactive rien ; il respecte l’utilisateur Android actif et propose un export JSON.
+- **Profil du modèle** reconnaît les identifiants Shield 2017, 2019 tube et Pro 2019, ainsi que la famille 2015/2017. Les conseils restent indicatifs selon le firmware. Les recommandations TV sont désormais protégées : elles peuvent être nécessaires à la télécommande NVIDIA sur téléphone après redémarrage. Les services NVIDIA connus d’appairage, audio, paramètres et mise à jour sont également protégés. Aucune liste communautaire de désactivation n’est appliquée.
+- **Mesurer le launcher** demande confirmation : ouvre les paramètres, revient à Home, déplace la sélection avec six touches directionnelles, puis arrête et relance le launcher pour mesurer son démarrage à froid. Le rapport affiche les durées Android de lancement/retour, les différences de compteurs d’images rendues/saccadées et la mémoire PSS. Ce n’est pas une mesure de latence physique de la télécommande. Les mesures absentes ou non fiables restent indisponibles. Le dernier résultat persiste sur le serveur par appareil/utilisateur pour une comparaison avant/après ; le rapport est exportable. Utilisez la même charge et comparez des conditions similaires. Cette action interrompt l’écran en cours.
+- **Installer CleanYourTV**, facultatif, installe l’APK **3.1**, compilé depuis la révision fixe `fcde1eedb4d6cc5ab683a6e0e9e1bc79229b898e` et inclus dans la distribution Docker. Le SHA-256 est vérifié avant installation. Android **8+** et utilisateur Android **0** requis. **Ouvrir CleanYourTV** lance son interface ; l’apparence, le dock, l’ordre des applications et les modules se règlent sur la TV. Les thèmes externes restent gérés par les outils du launcher. Choisissez ensuite le launcher par défaut dans les réglages existants et testez Home. L’installation ne désactive pas le launcher constructeur et ne résout jamais un conflit de signature par une désinstallation. L’APK est une compilation de ce projet, pas une release binaire officielle de son auteur.
+
+Pour une exécution hors Docker, conservez `assets/launchers/` dans le répertoire de lancement. `scripts/build-clean-launcher.sh` reconstruit l’APK avec Docker (JDK 17, SDK 34), exécute ses tests et Android Lint, puis affiche le SHA-256 à mettre à jour dans `CleanLauncher.ts`. Le volume privé `shield-clean-gradle` conserve la clé de signature : une autre clé peut empêcher la mise à jour d’une installation existante. La reconstruction ne contacte aucune TV. Aucun script externe de nettoyage ou d’installation sur appareil n’est exécuté par Shield Controller.
+
+Les tests automatisés de l’intégration simulent ADB ; ils ne remplacent pas une validation sur le firmware de votre TV.
+
 ## Docker
 
 Sur **Linux amd64**, ajoutez cette stack dans Dockge ou lancez `docker compose up -d` :
@@ -144,6 +162,7 @@ Sans serveur personnalisé, le test s’exécute sur la Shield. Avec une IP DNS 
 - **[Ansub/tv-detox](https://github.com/Ansub/tv-detox)** — inspiration pour la maintenance TV et fournisseur du launcher Android facultatif, sous [licence MIT](https://github.com/Ansub/tv-detox/blob/main/LICENSE). Les fonctions de maintenance et les contrôles de compatibilité sont implémentés nativement ; aucun script shell ni code Java du projet n’est intégré. L’APK est téléchargé sur demande, sans être inclus dans la distribution.
 - **[bilbospocketses/ws-scrcpy-web](https://github.com/bilbospocketses/ws-scrcpy-web)** — projet de base, avec des ajouts de gestion des appareils par Aerya.
 - **[bryanroscoe/shield_optimizer](https://github.com/bryanroscoe/shield_optimizer)** (ATV Optimizer) — inspiration pour les réglages, le nettoyage recommandé, la réactivation groupée et les instantanés. Son auteur interdit l’utilisation de son code : aucune ligne de code ni aucune liste n’en est reprise ; les fonctions ont été réécrites à partir des commandes Android publiques.
+- **[Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv)** — inspiration pour l’audit, les profils et le benchmark, réimplémentés nativement ; fournisseur du launcher facultatif compilé depuis ses sources. [Licence MIT et copyright](assets/launchers/LICENSE-MIT.txt) ; police Outfit sous [SIL Open Font License](assets/launchers/LICENSE-OFL.txt). Les notices accompagnent l’APK.
 - **[Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)** — miroir d’écran.
 
 **GPL-3.0-only** — voir [LICENSE](LICENSE). Les mentions de copyright d’origine sont conservées.

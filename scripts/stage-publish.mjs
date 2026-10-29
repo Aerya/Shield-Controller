@@ -118,6 +118,10 @@ function main() {
     // 4. dist/
     step('Copy dist/', () => cpSync(distDir, join(PUBLISH, 'dist'), { recursive: true }));
 
+    step('Copy optional launcher and licenses', () =>
+        cpSync(join(REPO_ROOT, 'assets', 'launchers'), join(PUBLISH, 'assets', 'launchers'), { recursive: true }),
+    );
+
     // 5. package.json + package-lock.json (npm ci needs both)
     step('Copy package.json', () => copyFileSync(pkgJson, join(PUBLISH, 'package.json')));
     step('Copy package-lock.json', () =>
