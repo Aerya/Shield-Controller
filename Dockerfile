@@ -148,6 +148,7 @@ RUN npm ci --omit=dev --ignore-scripts \
 
 COPY --from=build /src/dist            ./dist
 COPY --from=build /src/seed            ./seed
+COPY assets/launchers                  ./assets/launchers
 COPY start.sh                          ./start.sh
 COPY docker/entrypoint.sh              /usr/local/bin/entrypoint.sh
 

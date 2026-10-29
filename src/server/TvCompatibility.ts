@@ -1,5 +1,13 @@
 // Curated compatibility facts, not a universal debloat list. Unknown packages stay unknown.
 export const TV_COMPONENTS: Record<string, string> = {
+    'com.google.android.tvrecommendations': 'TV recommendations and NVIDIA phone remote integration',
+    'com.nvidia.shield.remote.server': 'NVIDIA phone remote service',
+    'com.nvidia.blakepairing': 'NVIDIA remote pairing',
+    'com.nvidia.nvaudiosvc': 'NVIDIA audio service',
+    'com.nvidia.NvCPLSvc': 'NVIDIA device settings',
+    'com.nvidia.ota': 'NVIDIA firmware updates',
+    'com.nvidia.NvCPLUpdater': 'NVIDIA settings updater',
+    'com.nvidia.KeyComboOta': 'NVIDIA recovery update service',
     'com.google.android.gms': 'Google Play services',
     'com.android.vending': 'Google Play Store',
     'com.android.settings': 'Android settings',

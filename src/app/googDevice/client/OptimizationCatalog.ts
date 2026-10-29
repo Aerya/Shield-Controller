@@ -53,7 +53,7 @@ const catalog: Record<string, [string, string]> = {
     ],
     'com.google.android.tvrecommendations': [
         'Android TV recommendations',
-        'Provides home-screen recommendations. Disabling can remove suggestions and affect home-screen content.',
+        'Provides home-screen recommendations and can be required by the NVIDIA phone remote after reboot. Protected to preserve remote input.',
     ],
     'com.spocky.projengmenu': [
         'Projectivy Launcher',

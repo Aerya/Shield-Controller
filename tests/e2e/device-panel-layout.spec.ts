@@ -239,6 +239,11 @@ for (const width of [1100, 390]) {
             baselineAt: '2026-10-27T00:00:00Z',
             before: null,
             detox: { version: '1.5.6', installed: true },
+            cleanLauncher: { version: '3.1', installed: true, minSdk: 26 },
+            profile: {
+                model: 'SHIELD TV Pro 2019',
+                notes: ['Keep TV recommendations enabled: the NVIDIA phone remote can depend on it after reboot.'],
+            },
         };
         await page.route('http://shield.test/api/manager/maintenance?serial=tv', async (route) => {
             if (route.request().method() === 'GET') {
@@ -247,7 +252,38 @@ for (const width of [1100, 390]) {
             }
             const body = route.request().postDataJSON();
             actions.push(body);
-            if (body.action === 'check')
+            if (body.action === 'privacy')
+                await route.fulfill({
+                    json: {
+                        entries: [
+                            {
+                                packageName: 'com.nvidia.stats',
+                                category: 'telemetry',
+                                note: 'NVIDIA usage statistics.',
+                                declared: null,
+                                accessed: null,
+                                sharedSystemUid: true,
+                            },
+                        ],
+                        skipped: 0,
+                    },
+                });
+            else if (body.action === 'benchmark')
+                await route.fulfill({
+                    json: {
+                        before: null,
+                        after: {
+                            at: '2026-10-29T06:00:00Z',
+                            home: launcher,
+                            coldMs: 120,
+                            homeMs: null,
+                            frames: 15,
+                            janky: 2,
+                            pssKiB: 12000,
+                        },
+                    },
+                });
+            else if (body.action === 'check')
                 await route.fulfill({
                     json: {
                         revision: status.baselineAt,
@@ -309,6 +345,24 @@ for (const width of [1100, 390]) {
             quick: ['sound'],
             clock: '24',
         });
+        await page.getByRole('button', { name: 'Audit privacy', exact: true }).click();
+        await expect(page.getByText('Shared system UID:', { exact: false })).toBeVisible();
+        await expect(page.getByText('Microphone access in returned history: Unknown', { exact: true })).toBeVisible();
+        const previousCount = actions.length;
+        page.once('dialog', (dialog) => dialog.dismiss());
+        await page.getByRole('button', { name: 'Benchmark launcher', exact: true }).click();
+        expect(actions).toHaveLength(previousCount);
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByRole('button', { name: 'Benchmark launcher', exact: true }).click();
+        await expect(page.getByText('Cold start: 120 ms', { exact: true })).toBeVisible();
+        await expect(page.getByText('Return to Home: Unavailable', { exact: true })).toBeVisible();
+        expect(actions.at(-1)).toMatchObject({ action: 'benchmark', confirmed: true, user: 0 });
+        page.once('dialog', (dialog) => dialog.dismiss());
+        await page.getByRole('button', { name: 'Install CleanYourTV', exact: true }).click();
+        expect(actions.at(-1)?.action).toBe('benchmark');
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByRole('button', { name: 'Open CleanYourTV', exact: true }).click();
+        await expect.poll(() => actions.at(-1)?.action).toBe('open-clean');
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     });
 }
