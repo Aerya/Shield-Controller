@@ -146,13 +146,14 @@ export class DeviceSnapshot {
         return { user: apps.user, model: snapshot.model, createdAt: snapshot.createdAt, steps, skipped };
     }
 
-    async apply(serial: string, input: unknown, expectedUser: unknown) {
+    async apply(serial: string, input: unknown, expectedUser: unknown, selected?: string[]) {
         if (this.busy.has(serial)) throw new SnapshotError('A snapshot is already being applied to this device.');
         this.busy.add(serial);
         try {
             const plan = await this.plan(serial, input);
             if (plan.user !== expectedUser) throw new SnapshotError('Android user changed. Refresh diagnostics.');
             // Launcher first, so the old launcher is no longer protected if the snapshot disables it.
+            if (selected) plan.steps = plan.steps.filter((step) => selected.includes(`${step.kind}:${step.target}`));
             const order = ['launcher', 'enable', 'setting', 'density', 'disable'];
             plan.steps.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
             for (const step of plan.steps) {

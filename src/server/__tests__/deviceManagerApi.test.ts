@@ -82,6 +82,8 @@ describe('device management HTTP API', () => {
             ['uninstall', 'POST'],
             ['optimization', 'GET'],
             ['optimization', 'POST'],
+            ['maintenance', 'GET'],
+            ['maintenance', 'POST'],
         ]) {
             expect((await fetch(url(route!), { method: method! })).status).toBe(403);
         }

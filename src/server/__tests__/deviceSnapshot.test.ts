@@ -118,6 +118,12 @@ describe('device snapshots', () => {
         expect(result.steps.find((step) => step.target === 'com.nvidia.stats')?.result).toBe('success');
         await expect(service.apply('tv', snapshot(), 10)).rejects.toThrow('user changed');
     });
+    it('applies only explicitly selected differences', async () => {
+        const { service, calls } = setup();
+        const result = await service.apply('tv', snapshot(), 0, ['setting:window_animation_scale']);
+        expect(calls).toEqual(['window_animation_scale=0.5']);
+        expect(result.steps).toHaveLength(1);
+    });
     it('rejects foreign files, injection and out-of-list values', () => {
         for (const bad of [
             null,

@@ -202,3 +202,38 @@ dialog.modal .modal-frame.device-manager {
     flex: none;
     margin-top: 3px;
 }
+
+.maintenance-panel label {
+    display: block;
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+}
+.maintenance-panel p,
+.maintenance-panel option {
+    overflow-wrap: anywhere;
+}
+.maintenance-panel select,
+.maintenance-panel textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.maintenance-panel textarea {
+    display: block;
+    width: 100%;
+}
+
+.remote-mapping-row label {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr);
+    align-items: center;
+    gap: 8px;
+}
+.remote-mapping-row select {
+    width: 100%;
+    min-width: 0;
+}
+@media (max-width: 640px) {
+    .remote-mapping-row label {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

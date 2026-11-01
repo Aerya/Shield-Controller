@@ -10,6 +10,7 @@ permissions:
 jobs:
   validation:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -17,9 +18,48 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
+      - name: Installer JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Installer le SDK Android
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Tester et compiler le compagnon Android
+        env:
+          REMOTE_SIGNING_DIR: ${{ runner.temp }}/remote-signing
+          REMOTE_APK_OUTPUT: ${{ runner.temp }}/shield-remote.apk
+        run: |
+          bash scripts/build-remote-companion.sh
+          python3 - <<'PYCODE'
+          import os, zipfile
+          with zipfile.ZipFile('assets/launchers/shield-remote.apk') as bundled, zipfile.ZipFile(os.environ['REMOTE_APK_OUTPUT']) as rebuilt:
+              for name in bundled.namelist():
+                  if name == 'classes.dex' or name == 'resources.arsc' or name == 'AndroidManifest.xml' or name.startswith('res/'):
+                      assert bundled.read(name) == rebuilt.read(name), f'APK désynchronisé : {name}'
+          PYCODE
+      - run: npx biome check src/server/LauncherRecovery.ts src/server/RemoteMapping.ts src/server/__tests__/launcherRecovery.test.ts src/server/__tests__/remoteMapping.test.ts
       - run: npx tsc --noEmit
       - run: npx biome check src/server/api/DeviceManagerApi.ts src/server/__tests__/deviceManagerApi.test.ts src/app/googDevice/client/DeviceManagerModal.ts src/app/googDevice/client/__tests__/DeviceManagerModal.test.ts src/style/device-manager.css src/server/DeviceOptimization.ts src/server/__tests__/deviceOptimization.test.ts src/app/googDevice/client/OptimizationPanel.ts src/app/googDevice/client/OptimizationCatalog.ts src/app/googDevice/client/__tests__/OptimizationPanel.test.ts
+      - run: npx biome check src/server/TvMaintenance.ts src/server/TvCompatibility.ts src/server/DeviceSnapshot.ts src/server/__tests__/tvMaintenance.test.ts src/server/__tests__/deviceSnapshot.test.ts src/app/googDevice/client/MaintenancePanel.ts src/app/googDevice/client/TweaksPanel.ts
+      # Test the native addon built for this runner rather than a mutable upstream prebuild.
+      - name: Compiler node-pty pour le runner
+        run: |
+          npm exec --yes --package=node-gyp@13.1.0 -- node-gyp rebuild --directory node_modules/node-pty
+          node -e "require('node-pty')"
       - run: npm test -- --maxWorkers=4
-      - run: npx playwright install --with-deps chromium firefox
+      - name: Installer les navigateurs et dépendances Playwright
+        timeout-minutes: 8
+        run: |
+          # Avoid the Azure Ubuntu mirror, observed downloading at about 45 KiB/s.
+          for source in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|https://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source"
+            fi
+          done
+          npx playwright install --with-deps chromium firefox
       - run: npm run test:layout
       - run: npm run build
