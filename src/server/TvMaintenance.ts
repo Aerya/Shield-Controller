@@ -8,6 +8,8 @@ import { CLEAN_LAUNCHER, installCleanLauncher, openCleanLauncher } from './Clean
 import { cpuUsage } from './DeviceMetrics';
 import type { DeviceSnapshot, PlanStep, Snapshot } from './DeviceSnapshot';
 import { components, type DeviceTweaks } from './DeviceTweaks';
+import { LauncherRecovery } from './LauncherRecovery';
+import { RemoteMapping } from './RemoteMapping';
 import { shArg } from './security/deviceInput';
 import { benchmarkLauncher } from './TvBenchmark';
 import { persistentPackages, TV_COMPONENTS, TV_FEATURES } from './TvCompatibility';
@@ -129,6 +131,30 @@ export class TvMaintenance {
             const user = await this.user(serial, body['user']);
             const record = this.read(serial, user);
             switch (body['action']) {
+                case 'launcher-diagnose':
+                    return await new LauncherRecovery(this.adb, this.root).diagnose(serial, user);
+                case 'launcher-recover':
+                    return await new LauncherRecovery(this.adb, this.root).apply(
+                        serial,
+                        user,
+                        body['target'],
+                        body['stock'],
+                        body['confirmed'],
+                    );
+                case 'launcher-restore':
+                    if (body['confirmed'] !== true) throw new MaintenanceError('Confirm launcher recovery first.');
+                    return await new LauncherRecovery(this.adb, this.root).restore(serial, user);
+                case 'remote-status':
+                    return await new RemoteMapping(this.adb).status(serial, user);
+                case 'remote-save':
+                    if (body['confirmed'] !== true) throw new MaintenanceError('Confirm remote changes first.');
+                    return await new RemoteMapping(this.adb).save(serial, user, body['bindings']);
+                case 'remote-install':
+                    if (body['confirmed'] !== true) throw new MaintenanceError('Confirm remote installation first.');
+                    return await new RemoteMapping(this.adb).install(serial, user);
+                case 'remote-setup':
+                case 'remote-native':
+                    return await new RemoteMapping(this.adb).open(serial, user, body['action'] === 'remote-native');
                 case 'privacy': {
                     const report = await auditPrivacy(this.adb, serial, user);
                     await this.user(serial, user);

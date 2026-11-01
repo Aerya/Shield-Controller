@@ -366,3 +366,104 @@ for (const width of [1100, 390]) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     });
 }
+
+for (const width of [1100, 390]) {
+    test(`launcher recovery and remote mapping at ${width}px`, async ({ page }) => {
+        const { transformSync } = await import('@swc/core');
+        const source = readFileSync('src/app/googDevice/client/MaintenancePanel.ts', 'utf8')
+            .replace("import { t } from '../../client/Language';", 'const t = (value: string): string => value;')
+            .replace('export class MaintenancePanel', 'class MaintenancePanel');
+        const code = transformSync(source, { jsc: { parser: { syntax: 'typescript' }, target: 'es2022' } }).code;
+        const actions: Record<string, unknown>[] = [];
+        const target = 'com.alternative.home/com.alternative.home.Main';
+        const stock = 'com.google.android.tvlauncher';
+        let recovery = false;
+        let bindings: unknown[] = [];
+        await page.route('http://shield.test/api/manager/maintenance?serial=tv', async (route) => {
+            if (route.request().method() === 'GET') {
+                await route.fulfill({
+                    json: {
+                        user: 0,
+                        manufacturer: 'NVIDIA',
+                        model: 'Shield',
+                        sdk: '30',
+                        home: `${stock}/.Main`,
+                        launchers: [target],
+                        components: [],
+                        flagsAvailable: true,
+                        baselineAt: null,
+                        before: null,
+                        detox: { version: '1.5.6', installed: false },
+                    },
+                });
+                return;
+            }
+            const body = route.request().postDataJSON();
+            actions.push(body);
+            if (body.action === 'launcher-diagnose') {
+                await route.fulfill({
+                    json: {
+                        home: `${stock}/.Main`,
+                        launchers: [target],
+                        candidates: [stock],
+                        recovery: recovery ? { stock } : null,
+                    },
+                });
+            } else if (body.action === 'launcher-recover' || body.action === 'launcher-restore') {
+                recovery = body.action === 'launcher-recover';
+                await route.fulfill({ json: { success: true } });
+            } else if (body.action === 'remote-status' || body.action === 'remote-save') {
+                if (body.action === 'remote-save') bindings = body.bindings;
+                await route.fulfill({
+                    json: {
+                        installed: true,
+                        active: true,
+                        lastKey: 82,
+                        lastAt: 1000,
+                        bindings,
+                        apps: [{ packageName: 'com.example.player', label: 'TV Player' }],
+                    },
+                });
+            } else await route.fulfill({ json: { success: true } });
+        });
+        await page.route('http://shield.test/', (route) =>
+            route.fulfill({
+                contentType: 'text/html',
+                body: '<html><body><main class="device-manager"><div id="panel"></div></main></body></html>',
+            }),
+        );
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto('http://shield.test/');
+        await page.addStyleTag({ content: readFileSync('src/style/device-manager.css', 'utf8') });
+        await page.addScriptTag({ content: `${code}\nnew MaintenancePanel(document.getElementById('panel'), 'tv');` });
+        await page.getByRole('button', { name: 'Diagnose launcher routing' }).click();
+        await expect(page.getByLabel('Alternative launcher')).toHaveValue(target);
+        page.once('dialog', (d) => d.dismiss());
+        await page.getByRole('button', { name: 'Verify alternative and replace Home' }).click();
+        expect(actions.map((a) => a.action)).toEqual(['launcher-diagnose']);
+        page.once('dialog', (d) => d.accept());
+        await page.getByRole('button', { name: 'Verify alternative and replace Home' }).click();
+        await expect(page.getByText('Home verified.', { exact: false })).toBeVisible();
+        expect(actions.at(-1)).toMatchObject({ action: 'launcher-recover', user: 0, target, stock, confirmed: true });
+        await page.getByRole('button', { name: 'Diagnose launcher routing' }).click();
+        page.once('dialog', (d) => d.accept());
+        await page.getByRole('button', { name: 'Restore stock launcher', exact: true }).click();
+        await expect(page.getByText('Original launcher restored.', { exact: false })).toBeVisible();
+        await page.getByRole('button', { name: 'Load remote configuration' }).click();
+        await expect(page.getByText('Remote service connected.')).toBeVisible();
+        await page.getByRole('button', { name: 'Add button mapping' }).click();
+        await page.getByLabel('Short press', { exact: true }).selectOption('app:com.example.player');
+        await page.getByLabel('Long press (600 ms)', { exact: true }).selectOption('back');
+        await page.getByLabel('Double press (300 ms)', { exact: true }).selectOption('recents');
+        page.once('dialog', (d) => d.accept());
+        await page.getByRole('button', { name: 'Save button mappings' }).click();
+        await expect(page.getByLabel('Short press', { exact: true })).toHaveValue('app:com.example.player');
+        expect(bindings).toEqual([{ key: 82, tap: 'app:com.example.player', hold: 'back', double: 'recents' }]);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({ path: `test-results/remote-${width}-${test.info().project.name}.png`, fullPage: true });
+        page.once('dialog', (d) => d.accept());
+        await page.getByRole('button', { name: 'Reset all button mappings' }).click();
+        await expect(page.getByLabel('Short press', { exact: true })).toHaveCount(0);
+        expect(bindings).toEqual([]);
+    });
+}
