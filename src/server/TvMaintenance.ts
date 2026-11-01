@@ -4,11 +4,17 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AdbClient } from './AdbClient';
+import { CLEAN_LAUNCHER, installCleanLauncher, openCleanLauncher } from './CleanLauncher';
 import { cpuUsage } from './DeviceMetrics';
 import type { DeviceSnapshot, PlanStep, Snapshot } from './DeviceSnapshot';
 import { components, type DeviceTweaks } from './DeviceTweaks';
+import { LauncherRecovery } from './LauncherRecovery';
+import { RemoteMapping } from './RemoteMapping';
 import { shArg } from './security/deviceInput';
+import { benchmarkLauncher } from './TvBenchmark';
 import { persistentPackages, TV_COMPONENTS, TV_FEATURES } from './TvCompatibility';
+import { auditPrivacy } from './TvPrivacy';
+import { tvProfile } from './TvProfiles';
 import { writeFileAtomicSync } from './util/atomicFile';
 
 export const DETOX = {
@@ -32,6 +38,7 @@ interface Measurement {
 interface RecordData {
     baseline?: Snapshot;
     before?: Measurement;
+    benchmark?: Awaited<ReturnType<typeof benchmarkLauncher>>;
 }
 export const stepId = (step: Pick<PlanStep, 'kind' | 'target'>): string => `${step.kind}:${step.target}`;
 const expand = (component: string): string => component.replace(/\/\./, `/${component.split('/')[0]}.`);
@@ -105,6 +112,12 @@ export class TvMaintenance {
                 })),
             baselineAt: record.baseline?.createdAt ?? null,
             before: record.before ?? null,
+            profile: tvProfile(
+                manufacturer.trim(),
+                await this.adb.shell(serial, 'getprop ro.product.device').catch(() => ''),
+            ),
+            benchmark: record.benchmark ?? null,
+            cleanLauncher: { ...CLEAN_LAUNCHER, installed: installed.includes(CLEAN_LAUNCHER.packageName) },
             detox: { ...DETOX, installed: installed.includes(DETOX.packageName) },
         };
     }
@@ -118,6 +131,46 @@ export class TvMaintenance {
             const user = await this.user(serial, body['user']);
             const record = this.read(serial, user);
             switch (body['action']) {
+                case 'launcher-diagnose':
+                    return await new LauncherRecovery(this.adb, this.root).diagnose(serial, user);
+                case 'launcher-recover':
+                    return await new LauncherRecovery(this.adb, this.root).apply(
+                        serial,
+                        user,
+                        body['target'],
+                        body['stock'],
+                        body['confirmed'],
+                    );
+                case 'launcher-restore':
+                    if (body['confirmed'] !== true) throw new MaintenanceError('Confirm launcher recovery first.');
+                    return await new LauncherRecovery(this.adb, this.root).restore(serial, user);
+                case 'remote-status':
+                    return await new RemoteMapping(this.adb).status(serial, user);
+                case 'remote-save':
+                    if (body['confirmed'] !== true) throw new MaintenanceError('Confirm remote changes first.');
+                    return await new RemoteMapping(this.adb).save(serial, user, body['bindings']);
+                case 'remote-install':
+                    if (body['confirmed'] !== true) throw new MaintenanceError('Confirm remote installation first.');
+                    return await new RemoteMapping(this.adb).install(serial, user);
+                case 'remote-setup':
+                case 'remote-native':
+                    return await new RemoteMapping(this.adb).open(serial, user, body['action'] === 'remote-native');
+                case 'privacy': {
+                    const report = await auditPrivacy(this.adb, serial, user);
+                    await this.user(serial, user);
+                    return report;
+                }
+                case 'benchmark': {
+                    if (body['confirmed'] !== true) throw new MaintenanceError('Confirm the launcher benchmark first.');
+                    const report = await benchmarkLauncher(this.adb, serial, user);
+                    await this.user(serial, user);
+                    this.save(serial, user, { ...record, benchmark: report });
+                    return { before: record.benchmark ?? null, after: report };
+                }
+                case 'install-clean':
+                    return await installCleanLauncher(this.adb, serial, user);
+                case 'open-clean':
+                    return await openCleanLauncher(this.adb, serial, user);
                 case 'save-baseline': {
                     const baseline = await this.snapshots.capture(serial);
                     await this.user(serial, user);

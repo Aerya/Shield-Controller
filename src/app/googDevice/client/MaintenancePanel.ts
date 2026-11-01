@@ -18,6 +18,8 @@ interface Status {
     components: { packageName: string; role: string; protected: boolean; persistent: boolean }[];
     baselineAt: string | null;
     before: Measurement | null;
+    profile?: { model: string | null; notes: string[] };
+    cleanLauncher?: { version: string; installed: boolean; minSdk: number };
     detox: { version: string; installed: boolean };
 }
 interface Plan {
@@ -257,7 +259,409 @@ export class MaintenancePanel {
         });
         after.disabled = !data.before;
         metrics.append(after);
-        this.container.append(compatibility, baseline, home, metrics, this.launcherSection(), this.result);
+        if (data.profile) {
+            compatibility.append(el('h4', t('Model profile')), el('p', data.profile.model ?? t('Unavailable')));
+            for (const note of data.profile.notes) compatibility.append(el('p', t(note)));
+        }
+        this.container.append(
+            compatibility,
+            baseline,
+            home,
+            this.recoverySection(),
+            this.remoteSection(),
+            metrics,
+            this.diagnosticsSection(),
+            this.launcherSection(),
+        );
+        if (data.cleanLauncher) this.container.append(this.cleanLauncherSection());
+        this.container.append(this.result);
+    }
+    private recoverySection(): HTMLElement {
+        const section = this.section(
+            'Home still opens the stock launcher',
+            'Diagnose first. An alternative must open successfully before the supported stock launcher can be disabled. The original state is saved for restoration.',
+        );
+        const body = el('div');
+        section.append(
+            this.button('Diagnose launcher routing', async () => {
+                const report = await this.action('launcher-diagnose');
+                body.replaceChildren(el('p', `${t('Default launcher')}: ${report.home ?? t('Unavailable')}`));
+                if (report.recovery) {
+                    body.append(
+                        el('p', `${t('Saved recovery')}: ${report.recovery.stock}`),
+                        this.button('Restore stock launcher', async () => {
+                            if (!window.confirm(t('Re-enable the saved stock launcher and restore the previous Home?')))
+                                return;
+                            await this.action('launcher-restore', { confirmed: true });
+                            body.replaceChildren(
+                                el('p', t('Original launcher restored. Run the test again to verify routing.')),
+                            );
+                        }),
+                    );
+                    return;
+                }
+                const target = el('select');
+                target.setAttribute('aria-label', t('Alternative launcher'));
+                for (const value of report.launchers as string[]) {
+                    if (/^com.google.android.(tvlauncher|apps.tv.launcherx)\//.test(value)) continue;
+                    const option = el('option', value);
+                    option.value = value;
+                    target.append(option);
+                }
+                const stock = el('select');
+                stock.setAttribute('aria-label', t('Stock launcher to disable'));
+                for (const value of report.candidates as string[]) {
+                    const option = el('option', value);
+                    option.value = value;
+                    stock.append(option);
+                }
+                if (!target.options.length || !stock.options.length) {
+                    body.append(
+                        el('p', t('No supported launcher replacement available. Keep the current launcher enabled.')),
+                    );
+                    return;
+                }
+                body.append(
+                    el('label', t('Alternative launcher')),
+                    target,
+                    el('p', t('Stock launcher to disable')),
+                    stock,
+                    this.button('Verify alternative and replace Home', async () => {
+                        if (
+                            !window.confirm(
+                                `${t('Open the alternative, disable the selected stock launcher and test Home? This interrupts the TV.')}\n${target.value}\n${stock.value}`,
+                            )
+                        )
+                            return;
+                        await this.action('launcher-recover', {
+                            target: target.value,
+                            stock: stock.value,
+                            confirmed: true,
+                        });
+                        body.replaceChildren(el('p', t('Home verified. Diagnose again to access restoration.')));
+                    }),
+                );
+            }),
+            body,
+        );
+        return section;
+    }
+    private remoteSection(): HTMLElement {
+        const section = this.section(
+            'Remote button mapping',
+            'Optional companion on the TV. Enable its accessibility service on the TV, then configure buttons here. Power, volume and directional navigation remain unchanged. Home and special buttons depend on firmware.',
+        );
+        if (/nvidia/i.test(this.data!.manufacturer)) {
+            section.append(
+                el(
+                    'p',
+                    t(
+                        'For the native Menu button: Remotes & accessories → Customize Menu button. The shortcut opens Bluetooth settings; navigate to the parent menu if necessary.',
+                    ),
+                ),
+                this.button('Open remote and accessory settings', async () => {
+                    if (!window.confirm(t('Open TV settings now?'))) return;
+                    await this.action('remote-native');
+                }),
+            );
+        }
+        const body = el('div');
+        const load = async () => this.renderRemote(body, await this.action('remote-status'));
+        section.append(this.button('Load remote configuration', load), body);
+        return section;
+    }
+    private renderRemote(
+        body: HTMLElement,
+        state: {
+            installed: boolean;
+            active: boolean;
+            lastKey?: number;
+            lastAt?: number;
+            lastError?: string;
+            bindings: { key: number; tap: string; hold: string | null; double: string | null }[];
+            apps: { packageName: string; label: string }[];
+        },
+    ): void {
+        body.replaceChildren();
+        const install = this.button(
+            state.installed ? 'Update remote companion' : 'Install remote companion',
+            async () => {
+                if (!window.confirm(t('Install the bundled remote companion APK? Existing mappings are preserved.')))
+                    return;
+                this.renderRemote(body, await this.action('remote-install', { confirmed: true }));
+            },
+        );
+        install.disabled = this.data!.user !== 0 || Number(this.data!.sdk) < 26;
+        body.append(install);
+        if (!state.installed) return;
+        body.append(
+            el(
+                'p',
+                t(
+                    state.active
+                        ? 'Remote service connected.'
+                        : 'Remote service disconnected. Enable it in TV accessibility settings.',
+                ),
+            ),
+            this.button('Open companion setup', async () => {
+                if (!window.confirm(t('Open companion setup on the TV now?'))) return;
+                await this.action('remote-setup');
+            }),
+        );
+        body.append(
+            el(
+                'p',
+                t(
+                    'Press a supported remote button, then refresh to see its code. Only the last supported button is retained in memory; no text is captured.',
+                ),
+            ),
+            el(
+                'p',
+                `${t('Last observed button')}: ${state.lastKey || t('Unavailable')}${state.lastAt ? ` · ${new Date(state.lastAt).toLocaleTimeString()}` : ''}`,
+            ),
+            this.button('Refresh remote status', async () => {
+                if (!window.confirm(t('Reload saved mappings? Unsaved edits will be lost.'))) return;
+                this.renderRemote(body, await this.action('remote-status'));
+            }),
+        );
+        if (state.lastError) body.append(el('p', `${t('Last action error')}: ${state.lastError}`));
+        const keys: [number, string][] = [
+            [3, 'Home'],
+            [4, 'Back'],
+            [82, 'Menu'],
+            [84, 'Search'],
+            [85, 'Play / pause'],
+            [86, 'Stop'],
+            [87, 'Next'],
+            [88, 'Previous'],
+            [89, 'Rewind'],
+            [90, 'Fast forward'],
+            [126, 'Play'],
+            [127, 'Pause'],
+            [172, 'Guide'],
+            [183, 'Red'],
+            [184, 'Green'],
+            [185, 'Yellow'],
+            [186, 'Blue'],
+            [187, 'App switch'],
+            [188, 'Button 1'],
+            [189, 'Button 2'],
+            [190, 'Button 3'],
+        ];
+        const rows = el('div');
+        const editors: {
+            card: HTMLElement;
+            key: HTMLSelectElement;
+            tap: HTMLSelectElement;
+            hold: HTMLSelectElement;
+            double: HTMLSelectElement;
+        }[] = [];
+        const actionSelect = (label: string, value: string | null, optional: boolean) => {
+            const select = el('select');
+            select.setAttribute('aria-label', t(label));
+            const options: [string, string][] = optional ? [['', 'Not configured']] : [];
+            options.push(
+                ['home', 'Home'],
+                ['back', 'Back'],
+                ['recents', 'Recent apps'],
+                ['notifications', 'Notifications'],
+                ['none', 'Do nothing'],
+            );
+            for (const app of state.apps) options.push([`app:${app.packageName}`, `${app.label} (${app.packageName})`]);
+            if (value && !options.some(([id]) => id === value)) options.push([value, `${t('Unavailable')}: ${value}`]);
+            for (const [id, name] of options) {
+                const option = el('option', t(name));
+                option.value = id;
+                select.append(option);
+            }
+            select.value = value ?? '';
+            return select;
+        };
+        const add = (binding?: (typeof state.bindings)[number]) => {
+            if (editors.length >= 20) throw new Error(t('Maximum 20 button mappings.'));
+            const card = el('section');
+            card.className = 'optimization-section remote-mapping-row';
+            const key = el('select');
+            key.setAttribute('aria-label', t('Remote button'));
+            for (const [code, name] of keys) {
+                const option = el('option', `${t(name)} (${code})`);
+                option.value = String(code);
+                key.append(option);
+            }
+            key.value = String(
+                binding?.key ?? (state.lastKey && keys.some(([code]) => code === state.lastKey) ? state.lastKey : 82),
+            );
+            const tap = actionSelect('Short press', binding?.tap ?? 'home', false);
+            const hold = actionSelect('Long press (600 ms)', binding?.hold ?? null, true);
+            const twice = actionSelect('Double press (300 ms)', binding?.double ?? null, true);
+            for (const [label, control] of [
+                ['Remote button', key],
+                ['Short press', tap],
+                ['Long press (600 ms)', hold],
+                ['Double press (300 ms)', twice],
+            ] as const) {
+                const wrapper = el('label', t(label));
+                wrapper.append(control);
+                card.append(wrapper);
+            }
+            const editor = { card, key, tap, hold, double: twice };
+            editors.push(editor);
+            card.append(
+                this.button('Remove mapping', async () => {
+                    editors.splice(editors.indexOf(editor), 1);
+                    card.remove();
+                }),
+            );
+            rows.append(card);
+        };
+        for (const binding of state.bindings) add(binding);
+        body.append(
+            rows,
+            this.button('Add button mapping', async () => add()),
+            el(
+                'p',
+                t(
+                    'A short press action is required for each mapped button. Double press delays the short action by 300 ms. Removing a mapping restores normal handling.',
+                ),
+            ),
+            this.button('Save button mappings', async () => {
+                if (!window.confirm(t('Apply these mappings on the TV?'))) return;
+                const bindings = editors.map((row) => ({
+                    key: Number(row.key.value),
+                    tap: row.tap.value,
+                    hold: row.hold.value || null,
+                    double: row.double.value || null,
+                }));
+                this.renderRemote(body, await this.action('remote-save', { confirmed: true, bindings }));
+            }),
+            this.button('Reset all button mappings', async () => {
+                if (!window.confirm(t('Remove all mappings and restore normal button handling?'))) return;
+                this.renderRemote(body, await this.action('remote-save', { confirmed: true, bindings: [] }));
+            }),
+        );
+    }
+
+    private exportReport(report: unknown): HTMLButtonElement {
+        return this.button('Download report', async () => {
+            const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
+            const link = el('a');
+            link.href = url;
+            link.download = 'tv-diagnostics.json';
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+    }
+    private diagnosticsSection(): HTMLElement {
+        const section = this.section(
+            'Privacy and launcher performance',
+            'Privacy audit is read-only. A permission or a name match does not prove recording or tracking. Missing Android evidence is reported as unknown.',
+        );
+        section.append(
+            this.button('Audit privacy', async () => {
+                const report = await this.action('privacy');
+                this.result.replaceChildren(el('h4', t('Privacy audit')));
+                if (!report.entries.length)
+                    this.result.append(el('p', t('No known candidates found. This is not a privacy guarantee.')));
+                for (const item of report.entries) {
+                    const card = el('section');
+                    card.className = 'optimization-section';
+                    const state = (v: boolean | null) => t(v === null ? 'Unknown' : v ? 'Yes' : 'No');
+                    card.append(
+                        el('h4', item.packageName),
+                        el('p', `${t(item.category)} — ${t(item.note)}`),
+                        el('p', `${t('Declared microphone permission')}: ${state(item.declared)}`),
+                        el('p', `${t('Microphone access in returned history')}: ${state(item.accessed)}`),
+                    );
+                    if (item.nominated) card.append(el('p', t('Voice service selected by Android.')));
+                    if (item.sharedSystemUid)
+                        card.append(
+                            el('p', t('Shared system UID: microphone access cannot be attributed to this package.')),
+                        );
+                    this.result.append(card);
+                }
+                this.result.append(
+                    el('p', `${t('Candidates not inspected')}: ${report.skipped}`),
+                    this.exportReport(report),
+                );
+            }),
+        );
+        section.append(
+            el(
+                'p',
+                t(
+                    'Benchmark interrupts the TV, moves focus, stops and restarts the launcher. Save current work first. Timings are Android measurements, not physical remote latency.',
+                ),
+            ),
+            this.button('Benchmark launcher', async () => {
+                if (!window.confirm(t('Interrupt the TV and stop/restart its launcher for the benchmark?'))) return;
+                const report = await this.action('benchmark', { confirmed: true });
+                this.result.replaceChildren(el('h4', t('Launcher benchmark')));
+                for (const [label, sample] of [
+                    ['Before', report.before],
+                    ['After', report.after],
+                ] as const) {
+                    if (!sample) continue;
+                    const card = el('section');
+                    card.className = 'optimization-section';
+                    const value = (v: number | null, unit: string) => (v === null ? t('Unavailable') : `${v} ${unit}`);
+                    card.append(
+                        el('h4', t(label)),
+                        el('p', `${sample.home} · ${new Date(sample.at).toLocaleString()}`),
+                        el('p', `${t('Cold start')}: ${value(sample.coldMs, 'ms')}`),
+                        el('p', `${t('Return to Home')}: ${value(sample.homeMs, 'ms')}`),
+                        el(
+                            'p',
+                            `${t('Rendered frames / janky frames')}: ${sample.frames ?? '?'} / ${sample.janky ?? '?'}`,
+                        ),
+                        el('p', `PSS: ${value(sample.pssKiB, 'KiB')}`),
+                    );
+                    this.result.append(card);
+                }
+                this.result.append(
+                    el(
+                        'p',
+                        t(
+                            'The previous run is retained for comparison. Use the same workload; different launchers or firmware may not provide comparable counters.',
+                        ),
+                    ),
+                    this.exportReport(report),
+                );
+            }),
+        );
+        return section;
+    }
+    private cleanLauncherSection(): HTMLElement {
+        const data = this.data!;
+        const launcher = data.cleanLauncher!;
+        const section = this.section(
+            'Optional CleanYourTV launcher',
+            'Bundled source-built APK with SHA-256 verification. Installation keeps the stock launcher enabled. Themes, dock, app order and modules are configured in the launcher on the TV.',
+        );
+        section.append(el('p', `CleanYourTV ${launcher.version} · Android 8+`));
+        const install = this.button('Install CleanYourTV', async () => {
+            if (!window.confirm(t('Install the bundled CleanYourTV APK on this TV?'))) return;
+            await this.action('install-clean');
+            await this.refresh();
+        });
+        install.disabled = data.user !== 0 || !/^\d+$/.test(data.sdk) || Number(data.sdk) < launcher.minSdk;
+        section.append(install);
+        if (install.disabled) section.append(el('p', t('Installation requires Android 8+ and Android user 0.')));
+        if (launcher.installed)
+            section.append(
+                this.button('Open CleanYourTV', async () => {
+                    if (!window.confirm(t('Open CleanYourTV on the TV now?'))) return;
+                    await this.action('open-clean');
+                }),
+            );
+        section.append(
+            el(
+                'p',
+                t(
+                    'Choose the default launcher in Settings and tweaks, then test Home. Signature conflicts never trigger an uninstall.',
+                ),
+            ),
+        );
+        return section;
     }
     private measurement(label: string, measurement: Measurement): HTMLElement {
         const memory = measurement.availableKiB === null ? '?' : (measurement.availableKiB / 1024).toFixed(1);
