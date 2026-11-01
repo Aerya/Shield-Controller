@@ -1,0 +1,11 @@
+<resources>
+ <string name="app_name">Shield Controller Remote</string>
+ <string name="service_description">Remaps selected remote buttons. No screen content, text or network access. Enable only to use your configured mappings.</string>
+ <string name="help">Configure buttons from Shield Controller → Settings → TV maintenance. Enable the service below. Power, volume and directional navigation are never remapped. Some firmware intercepts Home or special buttons before this service.</string>
+ <string name="accessibility">Open accessibility settings</string>
+ <string name="reset">Remove all mappings</string>
+ <string name="reset_confirm">Remove all mappings and restore normal button handling?</string>
+ <string name="active">Service connected</string>
+ <string name="inactive">Service disconnected: enable it in Accessibility</string>
+ <string name="done">Mappings removed</string>
+</resources>

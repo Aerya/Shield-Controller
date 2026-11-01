@@ -1,0 +1,11 @@
+<resources>
+ <string name="app_name">Shield Controller Remote</string>
+ <string name="service_description">Réaffecte les boutons choisis. Aucun accès au contenu de l’écran, au texte ou au réseau. À activer uniquement pour utiliser vos raccourcis.</string>
+ <string name="help">Configurez les boutons dans Shield Controller → Réglages → Maintenance TV. Activez le service ci-dessous. Alimentation, volume et navigation directionnelle ne sont jamais réaffectés. Certains firmwares interceptent Home ou des boutons spéciaux avant ce service.</string>
+ <string name="accessibility">Ouvrir les paramètres d’accessibilité</string>
+ <string name="reset">Supprimer tous les raccourcis</string>
+ <string name="reset_confirm">Supprimer les raccourcis et rétablir le comportement normal des boutons ?</string>
+ <string name="active">Service connecté</string>
+ <string name="inactive">Service déconnecté : activez-le dans Accessibilité</string>
+ <string name="done">Raccourcis supprimés</string>
+</resources>

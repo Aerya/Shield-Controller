@@ -39,6 +39,9 @@ Update image trust stores and TLS components following the eMudhra incident. Che
 - Launcher benchmark: cold start, return Home, janky frames and PSS memory, with persistent comparison
 - Optional CleanYourTV launcher, built from a pinned revision and bundled with SHA-256 verification
 
+- Reversible stock launcher replacement with Home verification and persistent recovery
+- Remote button mapping through an optional Android companion: short/long/double press, apps and system actions
+
 ## Screenshots
 
 | | |
@@ -94,9 +97,9 @@ In **Settings and tweaks → TV maintenance**:
 - **Test Home button** explicitly opens Settings and presses Home after confirmation. Select the expected launcher; the report shows the observed application. Restoring the original launcher on failure is optional and requires an original recorded by Shield Controller. Unrecognized vendor routing is reported as unverified; no launcher is disabled and no reboot is performed. This interrupts the current TV screen.
 - **Compatibility** identifies Google TV and known TV components (HDMI, remote, setup, Cast, screensaver…). Known essential components and packages marked `PERSISTENT` are protected against disabling and uninstalling. The catalog is not exhaustive; unknown applications are not declared safe to disable. Keep the screensaver enabled on OLED displays.
 - **Measure before / Measure after** compares available RAM, a one-second CPU sample and uptime. The before measurement persists. A different or unknown boot is explicitly reported: these figures do not prove a speed improvement. Use comparable workloads.
-- **Install TV Detox** optionally installs the TV Detox Android launcher, pinned to **1.5.6**, downloaded from its official release and verified by SHA-256. Installation is limited to Android user 0, keeps the stock launcher enabled and never uninstalls an existing app on a signature conflict. The server needs outbound Internet access to GitHub. Once installed, configure application order (package identifiers), Bluetooth/sound/picture shortcuts and clock format, then open the launcher from this panel. Sending configuration replaces these options; the panel does not read the launcher's internal preferences. Shortcut availability depends on firmware. To select it as Home, refresh **Settings and tweaks**, choose **Default launcher** and test Home. Google TV may keep opening its stock home screen; Shield Controller does not force replacement by disabling it.
+- **Install TV Detox** optionally installs the TV Detox Android launcher, pinned to **1.5.6**, downloaded from its official release and verified by SHA-256. Installation is limited to Android user 0, keeps the stock launcher enabled and never uninstalls an existing app on a signature conflict. The server needs outbound Internet access to GitHub. Once installed, configure application order (package identifiers), Bluetooth/sound/picture shortcuts and clock format, then open the launcher from this panel. Sending configuration replaces these options; the panel does not read the launcher's internal preferences. Shortcut availability depends on firmware. To select it as Home, refresh **Settings and tweaks**, choose **Default launcher** and test Home. Google TV may keep opening its stock home screen; the separate “Home still opens the stock launcher” workflow offers confirmed, reversible replacement for supported packages.
 
-These features are implemented natively in Shield Controller. No external `install.sh`, `check.sh` or cleanup script is executed. Only the optional launcher is a separate Android application. Installation does not guarantee compatibility with every model. Automated validation uses simulated ADB responses; firmware-specific behavior still needs verification on the device.
+These features are implemented natively in Shield Controller. No external `install.sh`, `check.sh` or cleanup script is executed. The optional launchers and remote companion are separate Android applications. Installation does not guarantee compatibility with every model. Automated validation uses simulated ADB responses; firmware-specific behavior still needs verification on the device.
 
 ### Privacy, model profiles and benchmark
 
@@ -110,6 +113,34 @@ In **Settings and tweaks → TV maintenance**:
 Outside Docker, keep `assets/launchers/` in the working directory. `scripts/build-clean-launcher.sh` rebuilds the APK with Docker (JDK 17, SDK 34), runs its tests and Android Lint, then prints the SHA-256 to update in `CleanLauncher.ts`. The private `shield-clean-gradle` volume preserves the signing key: a different key may prevent updating an existing installation. Rebuilding does not contact a TV. Shield Controller runs no external cleanup or device-installation scripts.
 
 Integration tests use simulated ADB responses; they do not replace validation on your TV's firmware.
+
+### Stock launcher still opens on Home
+
+In **TV maintenance → Home still opens the stock launcher**, select **Diagnose launcher routing**, choose the alternative and the stock launcher to disable, then confirm **Verify alternative and replace Home**. This interrupts the current TV screen.
+
+The server verifies that the alternative is an installed, enabled Home activity, opens it and checks the foreground activity before disabling anything. It records the original state, selects the new Home, disables only the selected stock launcher, then tests a Settings → Home transition. Failure triggers a restoration attempt. Only `com.google.android.tvlauncher` and `com.google.android.apps.tv.launcherx` are supported; packages marked `PERSISTENT` are refused. Other vendor and initial setup components are not disabled by this workflow.
+
+**Restore stock launcher**, available by running diagnostics again, restores its original enabled state and the previous Home. A per-device, per-Android-user journal is saved in `maintenance/` before the first change. If ADB disconnects or restoration fails, the journal remains: reconnect the same device with the same user and retry restoration. A different ADB address does not automatically find the old journal. Keep the `/data` volume. Ordinary launcher selection, optional launcher installation and the existing Home test still do not disable anything.
+
+### Remote button mapping
+
+In **TV maintenance → Remote button mapping**:
+
+1. **Load remote configuration**, then **Install remote companion**. The **Shield Controller Remote 1.0** APK, built from `companion/`, is bundled in Docker and checked against SHA-256 before installation. Android **8+**, Android user **0** for installation. Signature conflicts are reported without uninstalling the existing app.
+2. **Open companion setup**, then enable **Shield Controller Remote** in accessibility settings on the TV. Some Android versions may require allowing restricted settings in the app information screen. No other accessibility service is modified.
+3. Press a supported button and **Refresh remote status** to see its code. The panel reports the actual service connection; firmware may intercept a button before it reaches the service.
+4. **Add button mapping**, choose a short action and optionally a long (**600 ms**) or double (**300 ms**) press, then **Save button mappings**. Actions: open an app discovered on the TV, Home, Back, recent apps, notifications or do nothing. Every mapped button needs a short action; double press delays it by 300 ms.
+5. **Remove mapping** and save, or **Reset all button mappings**, to return buttons to the system. The companion also offers a local reset on the TV, even if the server is unavailable. Disabling its accessibility service suspends remapping too.
+
+Supported codes cover Home, Back, Menu, Search, media keys, Guide, coloured keys and generic buttons 1–3. There is no universal Netflix key code: use the code actually observed only if it is in the list. Power, sleep, volume, microphone, directional navigation and confirmation are not remapped. Unconfigured keys pass through. Home, special buttons and some actions may remain reserved by firmware; universal remapping is not guaranteed. Another key-filtering accessibility service may prevent this one from receiving events. Mappings execute on the TV and work without the browser or server connection.
+
+On NVIDIA Shield, **Open remote and accessory settings** uses the public Android Bluetooth settings intent. Depending on firmware, navigate to **Remotes & accessories → Customize Menu button** for native settings; private NVIDIA settings are not written automatically.
+
+The companion requests no network or screen-content access. Mappings are stored in private preferences; only the last supported button code is retained in memory, with no typed text or key history. Its ADB interface accepts only the system shell or root UID, not ordinary applications. Both sides validate actions and key codes. The APK is covered by the project's GPL-3.0-only license.
+
+To rebuild, `scripts/build-remote-companion.sh` requires JDK 17, Android SDK Platform 34 and Build Tools 34.0.0, `ANDROID_HOME`, and `REMOTE_SIGNING_DIR` pointing to a persistent private directory **outside the repository**. It runs JVM gesture tests, compiles and signs the APK, then prints the SHA-256 to update in `RemoteMapping.ts`. Retain the signing key for updates; never publish the key or password. `REMOTE_APK_OUTPUT` selects a separate verification output. CI compiles the companion with a temporary key and compares its DEX code and resources to the bundled APK.
+
+ADB and browser tests use simulated devices; gestures are tested on the JVM. No physical remote or TV validation is claimed. Verify Home routing, key delivery and restoration on your firmware.
 
 ## Docker
 
