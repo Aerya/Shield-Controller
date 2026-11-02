@@ -11,7 +11,7 @@ export const REMOTE = {
     appVersion: 2,
     versionName: '1.1',
     minSdk: 26,
-    sha256: '32cdcfead383bf92a1beb3de1f4b7443fafd0e0cb192f3ccecbfb52eac0c45f0',
+    sha256: '69d9ed14c617d9218b5624139b1b01654becdde260486fdcfcace4cc5112fa0f',
 };
 export const REMOTE_KEYS = [
     3, 4, 82, 84, 85, 86, 87, 88, 89, 90, 126, 127, 172, 183, 184, 185, 186, 187, 188, 189, 190,
