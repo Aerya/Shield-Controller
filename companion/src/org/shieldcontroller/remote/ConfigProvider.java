@@ -1,6 +1,9 @@
 package org.shieldcontroller.remote;
 
 import android.content.ContentProvider;
+import android.content.ComponentName;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.view.accessibility.AccessibilityManager;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
@@ -8,6 +11,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,7 +32,21 @@ public final class ConfigProvider extends ContentProvider {
                     throw new IllegalStateException("Configuration could not be saved");
             } else if (!method.equals("status")) throw new IllegalArgumentException("Unknown method");
             JSONObject result = new JSONObject();
-            result.put("version", 1); result.put("active", RemoteService.connected);
+            result.put("version", 1); result.put("appVersion", 2); result.put("active", RemoteService.connected);
+            AccessibilityManager manager = getContext().getSystemService(AccessibilityManager.class);
+            ComponentName service = new ComponentName(getContext(), RemoteService.class);
+            boolean registered = false, enabled = false;
+            if (manager != null) {
+                for (AccessibilityServiceInfo info : manager.getInstalledAccessibilityServiceList())
+                    if (service.equals(ComponentName.unflattenFromString(info.getId()))) registered = true;
+            }
+            // AccessibilityManager's "enabled" list contains only bound services on Android 11.
+            // Read the saved grant separately so enabled-but-disconnected remains diagnosable.
+            String grants = Settings.Secure.getString(getContext().getContentResolver(),
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (grants != null) for (String component : grants.split(":"))
+                if (service.equals(ComponentName.unflattenFromString(component))) enabled = true;
+            result.put("registered", registered); result.put("enabled", enabled);
             result.put("bindings", Config.read(getContext()));
             result.put("lastKey", RemoteService.lastKey); result.put("lastAt", RemoteService.lastAt);
             result.put("lastError", RemoteService.lastError);

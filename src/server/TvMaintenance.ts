@@ -144,6 +144,13 @@ export class TvMaintenance {
                 case 'launcher-restore':
                     if (body['confirmed'] !== true) throw new MaintenanceError('Confirm launcher recovery first.');
                     return await new LauncherRecovery(this.adb, this.root).restore(serial, user);
+                case 'remote-accessibility':
+                    return await new RemoteMapping(this.adb).accessibility(
+                        serial,
+                        user,
+                        body['enabled'],
+                        body['confirmed'],
+                    );
                 case 'remote-status':
                     return await new RemoteMapping(this.adb).status(serial, user);
                 case 'remote-save':

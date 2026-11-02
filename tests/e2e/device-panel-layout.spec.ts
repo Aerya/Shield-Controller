@@ -379,6 +379,8 @@ for (const width of [1100, 390]) {
         const stock = 'com.google.android.tvlauncher';
         let recovery = false;
         let bindings: unknown[] = [];
+        let enabled = true;
+        let connected = true;
         await page.route('http://shield.test/api/manager/maintenance?serial=tv', async (route) => {
             if (route.request().method() === 'GET') {
                 await route.fulfill({
@@ -412,12 +414,23 @@ for (const width of [1100, 390]) {
             } else if (body.action === 'launcher-recover' || body.action === 'launcher-restore') {
                 recovery = body.action === 'launcher-recover';
                 await route.fulfill({ json: { success: true } });
-            } else if (body.action === 'remote-status' || body.action === 'remote-save') {
+            } else if (
+                body.action === 'remote-status' ||
+                body.action === 'remote-save' ||
+                body.action === 'remote-accessibility'
+            ) {
                 if (body.action === 'remote-save') bindings = body.bindings;
+                if (body.action === 'remote-accessibility') {
+                    enabled = body.enabled;
+                    connected = false;
+                }
                 await route.fulfill({
                     json: {
                         installed: true,
-                        active: true,
+                        appVersion: 2,
+                        registered: true,
+                        enabled,
+                        active: connected,
                         lastKey: 82,
                         lastAt: 1000,
                         bindings,
@@ -451,6 +464,22 @@ for (const width of [1100, 390]) {
         await expect(page.getByText('Original launcher restored.', { exact: false })).toBeVisible();
         await page.getByRole('button', { name: 'Load remote configuration' }).click();
         await expect(page.getByText('Remote service connected.')).toBeVisible();
+        page.once('dialog', (d) => d.dismiss());
+        await page.getByRole('button', { name: 'Disable remote service (ADB)', exact: true }).click();
+        expect(actions.at(-1)?.action).toBe('remote-status');
+        page.once('dialog', (d) => d.accept());
+        await page.getByRole('button', { name: 'Disable remote service (ADB)', exact: true }).click();
+        await expect(page.getByRole('button', { name: 'Enable remote service (ADB)', exact: true })).toBeVisible();
+        expect(actions.at(-1)).toMatchObject({
+            action: 'remote-accessibility',
+            enabled: false,
+            confirmed: true,
+            user: 0,
+        });
+        page.once('dialog', (d) => d.accept());
+        await page.getByRole('button', { name: 'Enable remote service (ADB)', exact: true }).click();
+        await expect(page.getByText('Enabled but not connected.', { exact: false })).toBeVisible();
+        await expect(page.getByText('Remote service connected.', { exact: true })).toHaveCount(0);
         await page.getByRole('button', { name: 'Add button mapping' }).click();
         await page.getByLabel('Short press', { exact: true }).selectOption('app:com.example.player');
         await page.getByLabel('Long press (600 ms)', { exact: true }).selectOption('back');

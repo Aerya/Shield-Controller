@@ -64,6 +64,34 @@ describe('remote mapping', () => {
         await f.service.install('tv', 0);
         expect(f.adb.installApk).toHaveBeenCalledOnce();
     });
+    it('requires explicit confirmation and an updated registered companion before activation', async () => {
+        const f = fixture();
+        await expect(f.service.accessibility('tv', 0, true, false)).rejects.toThrow('Confirm');
+        expect(f.adb.shell).not.toHaveBeenCalled();
+        await expect(f.service.accessibility('tv', 0, 'true', true)).rejects.toThrow('Confirm');
+        await expect(f.service.accessibility('tv', 0, true, true)).rejects.toThrow('Update');
+        expect(f.adb.shell.mock.calls.some(([, c]) => c.includes(' put '))).toBe(false);
+    });
+    it('reports an enabled but unbound service without inventing a connection', async () => {
+        vi.useFakeTimers();
+        try {
+            const shell = vi.fn(async (_s: string, cmd: string) => {
+                if (cmd === 'am get-current-user') return '0';
+                if (cmd.includes('get secure enabled_accessibility_services'))
+                    return 'org.shieldcontroller.remote/org.shieldcontroller.remote.RemoteService';
+                if (cmd.includes('get secure accessibility_enabled')) return '1';
+                if (cmd.startsWith('content call'))
+                    return `Result: Bundle[{payload=${Buffer.from(JSON.stringify({ version: 1, appVersion: 2, registered: true, enabled: true, active: false, bindings: [], apps: [] })).toString('base64')}}]`;
+                throw new Error(cmd);
+            });
+            const service = new RemoteMapping({ shell, installApk: vi.fn() });
+            const pending = service.accessibility('tv', 0, true, true);
+            await vi.runAllTimersAsync();
+            await expect(pending).resolves.toMatchObject({ enabled: true, active: false });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
     it('keeps the Java and web key allowlists in sync', () => {
         const java = readFileSync('companion/src/org/shieldcontroller/remote/GestureEngine.java', 'utf8');
         const expression = /return (key == 3[\s\S]*?);/.exec(java)![1]!;

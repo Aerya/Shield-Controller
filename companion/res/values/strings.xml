@@ -8,4 +8,9 @@
  <string name="active">Service connected</string>
  <string name="inactive">Service disconnected: enable it in Accessibility</string>
  <string name="done">Mappings removed</string>
+ <string name="settings_help">If the TV reports that no app can handle the action, return to Shield Controller in your browser, update this companion, then use Enable remote service (ADB). Confirm there to activate only this service. You can also navigate manually through Settings → Device Preferences → Accessibility.</string>
+ <string name="settings_unavailable">Settings screen unavailable</string>
+ <string name="general_settings">Open general TV settings</string>
+ <string name="app_settings">Open app information</string>
+    <string name="settings_path">Open Device Preferences → Accessibility → Shield Controller Remote.</string>
 </resources>
