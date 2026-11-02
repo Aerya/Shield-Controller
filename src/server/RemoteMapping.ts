@@ -2,13 +2,16 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { AdbClient } from './AdbClient';
+import { setRemoteAccessibility } from './RemoteAccessibility';
 import { shArg } from './security/deviceInput';
 
 export const REMOTE = {
     packageName: 'org.shieldcontroller.remote',
     version: 1,
+    appVersion: 2,
+    versionName: '1.1',
     minSdk: 26,
-    sha256: 'be623fda3a66413d9e6249912a5d17246d904471eb916b0057312460dd395285',
+    sha256: '32cdcfead383bf92a1beb3de1f4b7443fafd0e0cb192f3ccecbfb52eac0c45f0',
 };
 export const REMOTE_KEYS = [
     3, 4, 82, 84, 85, 86, 87, 88, 89, 90, 126, 127, 172, 183, 184, 185, 186, 187, 188, 189, 190,
@@ -99,6 +102,20 @@ export class RemoteMapping {
         const result = await this.adb.installApk(serial, path);
         if (!/\bSuccess\b/.test(result)) throw new Error(result || 'Android refused the APK.');
         return await this.status(serial, user);
+    }
+    async accessibility(serial: string, user: number, enabled: unknown, confirmed: unknown) {
+        if (typeof enabled !== 'boolean' || confirmed !== true)
+            throw new Error('Confirm remote accessibility changes first.');
+        const before = await this.call(serial, user);
+        if (before.appVersion !== REMOTE.appVersion || before.registered !== true)
+            throw new Error('Update the remote companion before changing accessibility.');
+        await setRemoteAccessibility(this.adb, serial, user, enabled);
+        let state = await this.call(serial, user);
+        for (let attempt = 0; attempt < 8 && (state.active !== enabled || state.enabled !== enabled); attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, 400));
+            state = await this.call(serial, user);
+        }
+        return { ...state, installed: true };
     }
     async open(serial: string, user: number, native: boolean) {
         await this.checkUser(serial, user);

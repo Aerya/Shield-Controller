@@ -374,6 +374,9 @@ export class MaintenancePanel {
         body: HTMLElement,
         state: {
             installed: boolean;
+            appVersion?: number;
+            registered?: boolean;
+            enabled?: boolean;
             active: boolean;
             lastKey?: number;
             lastAt?: number;
@@ -408,6 +411,55 @@ export class MaintenancePanel {
                 await this.action('remote-setup');
             }),
         );
+        body.append(
+            el(
+                'p',
+                t(
+                    'If the TV says no app can handle accessibility settings, use the confirmed ADB activation below. Other accessibility services are preserved.',
+                ),
+            ),
+        );
+        if ((state.appVersion ?? 0) < 2) {
+            body.append(el('p', t('Update the remote companion to use ADB activation and detailed status.')));
+        } else {
+            body.append(
+                el(
+                    'p',
+                    `${t('Service registered')}: ${t(state.registered ? 'Yes' : 'No')} · ${t('Enabled in Android')}: ${t(state.enabled ? 'Yes' : 'No')}`,
+                ),
+            );
+            if (state.enabled && !state.active)
+                body.append(
+                    el(
+                        'p',
+                        t(
+                            'Enabled but not connected. Android has not bound the service. Check restricted settings or another key-filtering service; activation alone does not prove that buttons work.',
+                        ),
+                    ),
+                );
+            const enabled = !!state.enabled;
+            const toggle = this.button(
+                enabled ? 'Disable remote service (ADB)' : 'Enable remote service (ADB)',
+                async () => {
+                    if (
+                        !window.confirm(
+                            t(
+                                enabled
+                                    ? 'Disable only Shield Controller Remote? Other accessibility services and saved mappings are preserved.'
+                                    : 'Enable Shield Controller Remote through ADB? It can intercept supported remote keys and perform the configured actions. Other accessibility services are preserved.',
+                            ),
+                        )
+                    )
+                        return;
+                    this.renderRemote(
+                        body,
+                        await this.action('remote-accessibility', { enabled: !enabled, confirmed: true }),
+                    );
+                },
+            );
+            toggle.disabled = state.registered !== true;
+            body.append(toggle);
+        }
         body.append(
             el(
                 'p',

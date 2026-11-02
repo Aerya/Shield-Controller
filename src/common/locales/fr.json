@@ -958,5 +958,20 @@
     "Confirm remote changes first.": "Confirmez d’abord les modifications de la télécommande.",
     "Confirm remote installation first.": "Confirmez d’abord l’installation du compagnon.",
     "Stock launcher flags unavailable or protected. Nothing disabled.": "Indicateurs du launcher d’origine indisponibles ou protégés. Aucune désactivation.",
-    "Complete Android setup before replacing Home.": "Terminez la configuration initiale Android avant de remplacer Home."
+    "Complete Android setup before replacing Home.": "Terminez la configuration initiale Android avant de remplacer Home.",
+    "If the TV says no app can handle accessibility settings, use the confirmed ADB activation below. Other accessibility services are preserved.": "Si la TV indique qu’aucune application ne peut ouvrir l’accessibilité, utilisez l’activation ADB ci-dessous après confirmation. Les autres services d’accessibilité sont conservés.",
+    "Update the remote companion to use ADB activation and detailed status.": "Mettez à jour le compagnon pour utiliser l’activation ADB et l’état détaillé.",
+    "Service registered": "Service reconnu par Android",
+    "Enabled in Android": "Activé dans Android",
+    "Enabled but not connected. Android has not bound the service. Check restricted settings or another key-filtering service; activation alone does not prove that buttons work.": "Activé mais non connecté : Android n’a pas connecté le service. Vérifiez les paramètres restreints et les autres services filtrant les touches. L’activation seule ne prouve pas que les boutons fonctionnent.",
+    "Disable remote service (ADB)": "Désactiver le service de télécommande (ADB)",
+    "Enable remote service (ADB)": "Activer le service de télécommande (ADB)",
+    "Disable only Shield Controller Remote? Other accessibility services and saved mappings are preserved.": "Désactiver uniquement Shield Controller Remote ? Les autres services d’accessibilité et les raccourcis enregistrés sont conservés.",
+    "Enable Shield Controller Remote through ADB? It can intercept supported remote keys and perform the configured actions. Other accessibility services are preserved.": "Activer Shield Controller Remote via ADB ? Il pourra intercepter les touches prises en charge et exécuter les actions configurées. Les autres services d’accessibilité sont conservés.",
+    "Confirm remote accessibility changes first.": "Confirmez d’abord la modification de l’accessibilité du compagnon.",
+    "Update the remote companion before changing accessibility.": "Mettez à jour le compagnon avant de modifier son accessibilité.",
+    "Accessibility settings unavailable. Nothing changed.": "Paramètres d’accessibilité indisponibles. Aucune modification.",
+    "Other accessibility services are globally disabled. Enable the companion from TV settings to avoid activating them.": "D’autres services d’accessibilité sont globalement désactivés. Activez le compagnon depuis les paramètres de la TV pour éviter de les activer.",
+    "Accessibility settings changed. Refresh and try again.": "Les paramètres d’accessibilité ont changé. Actualisez et réessayez.",
+    "Android did not apply remote accessibility. Refresh its status before retrying.": "Android n’a pas appliqué l’accessibilité du compagnon. Actualisez son état avant de réessayer."
 }

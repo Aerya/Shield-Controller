@@ -8,4 +8,9 @@
  <string name="active">Service connecté</string>
  <string name="inactive">Service déconnecté : activez-le dans Accessibilité</string>
  <string name="done">Raccourcis supprimés</string>
+ <string name="settings_help">Si la TV indique qu’aucune application ne peut effectuer cette action, revenez dans Shield Controller depuis le navigateur, mettez à jour le compagnon, puis choisissez Activer le service (ADB). Confirmez pour activer uniquement ce service. Vous pouvez aussi naviguer manuellement dans Paramètres → Préférences de l’appareil → Accessibilité.</string>
+ <string name="settings_unavailable">Écran de paramètres indisponible</string>
+ <string name="general_settings">Ouvrir les paramètres généraux de la TV</string>
+ <string name="app_settings">Ouvrir la fiche de l’application</string>
+    <string name="settings_path">Ouvrez Préférences relatives à l’appareil → Accessibilité → Shield Controller Remote.</string>
 </resources>

@@ -1,6 +1,9 @@
 package org.shieldcontroller.remote;
 
 import android.content.ContentProvider;
+import android.content.ComponentName;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.view.accessibility.AccessibilityManager;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
@@ -28,7 +31,17 @@ public final class ConfigProvider extends ContentProvider {
                     throw new IllegalStateException("Configuration could not be saved");
             } else if (!method.equals("status")) throw new IllegalArgumentException("Unknown method");
             JSONObject result = new JSONObject();
-            result.put("version", 1); result.put("active", RemoteService.connected);
+            result.put("version", 1); result.put("appVersion", 2); result.put("active", RemoteService.connected);
+            AccessibilityManager manager = getContext().getSystemService(AccessibilityManager.class);
+            ComponentName service = new ComponentName(getContext(), RemoteService.class);
+            boolean registered = false, enabled = false;
+            if (manager != null) {
+                for (AccessibilityServiceInfo info : manager.getInstalledAccessibilityServiceList())
+                    if (service.equals(ComponentName.unflattenFromString(info.getId()))) registered = true;
+                for (AccessibilityServiceInfo info : manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK))
+                    if (service.equals(ComponentName.unflattenFromString(info.getId()))) enabled = true;
+            }
+            result.put("registered", registered); result.put("enabled", enabled);
             result.put("bindings", Config.read(getContext()));
             result.put("lastKey", RemoteService.lastKey); result.put("lastAt", RemoteService.lastAt);
             result.put("lastError", RemoteService.lastError);
